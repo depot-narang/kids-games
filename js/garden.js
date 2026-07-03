@@ -26,6 +26,11 @@ GameShell.registerGame({
       ],
     };
 
+    // 물건 가격 조회표 (치울 때 되돌려줄 과일 계산용)
+    const COST = {};
+    Object.values(SHOPS).forEach((list) => list.forEach((it) => { COST[it.e] = it.cost; }));
+    const refundOf = (item) => (item.cost != null ? item.cost : (COST[item.e] || 0));
+
     const name = Player.current();
     // 저장 데이터 (예전 {items:[]} → outdoor 로 옮김)
     let garden = Player.garden(name) || {};
@@ -76,10 +81,14 @@ GameShell.registerGame({
         if (deleteMode) {
           const arr = garden[area]; const gi = arr.indexOf(item);
           if (gi >= 0) arr.splice(gi, 1);
-          el.remove(); save();
+          el.remove();
+          const refund = refundOf(item);
+          if (refund > 0) Player.addFruit(name, '🍓', refund);
+          updateFruit(); save();
           Sound.pop();
           const br = body.getBoundingClientRect();
           spawnFx(body, e.clientX - br.left, e.clientY - br.top, '💨');
+          if (refund > 0) spawnFx(body, e.clientX - br.left, e.clientY - br.top - 30, `🍓+${refund}`);
           return;
         }
         dragging = true; moved = false; el.setPointerCapture(e.pointerId); el.style.zIndex = 9999;
@@ -130,7 +139,7 @@ GameShell.registerGame({
       }
       // 지금 보고 있는 화면 가운데에 놓기
       const cx = (viewport.scrollLeft + viewport.clientWidth / 2) / canvasW;
-      const placed = { e: item.e, x: Math.max(0.03, Math.min(0.97, cx + randBetween(-0.12, 0.12))), y: randBetween(area === 'indoor' ? 0.62 : 0.55, 0.9) };
+      const placed = { e: item.e, cost: item.cost, x: Math.max(0.03, Math.min(0.97, cx + randBetween(-0.12, 0.12))), y: randBetween(area === 'indoor' ? 0.62 : 0.55, 0.9) };
       garden[area].push(placed);
       makeItemEl(placed);
       const hint = canvas.querySelector('.garden-hint'); if (hint) hint.remove();
