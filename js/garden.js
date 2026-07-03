@@ -22,7 +22,8 @@ GameShell.registerGame({
     }
     let placeIdx = 0;
     let deleteMode = false;
-    const canvasW = Math.max(1500, Math.round(window.innerWidth * 2.4));
+    let manageMode = false;
+    const canvasW = Math.max(1200, Math.round(window.innerWidth * 1.7));
 
     function save() { Player.setGarden(name, data); }
     function updateFruit() { actions.innerHTML = `<div class="pill">🍓 ${Player.totalFruits(name)}</div>`; }
@@ -35,24 +36,52 @@ GameShell.registerGame({
     function showPlaces() {
       deleteMode = false;
       updateFruit();
-      body.innerHTML = `<div class="hangul-center places-screen"><h3>${name}의 공간</h3><div class="places-grid"></div></div>`;
+      body.innerHTML = `<div class="hangul-center places-screen">
+        <div class="places-head"><h3>${name}의 공간</h3>
+          <button class="btn manage-toggle">${manageMode ? '✅ 다 됐어요' : '🗑️ 공간 정리'}</button></div>
+        <div class="places-grid"></div></div>`;
       const grid = body.querySelector('.places-grid');
       data.places.forEach((place, i) => {
         const th = Cartoon.theme(place.theme) || Cartoon.THEMES[0];
-        const card = document.createElement('button');
+        const card = document.createElement('div');
         card.className = 'place-card';
         card.innerHTML = `<div class="place-thumb" style="background:${th.css}"></div>` +
-          `<span>${th.emoji} ${th.name}</span><small>${place.items.length}개 꾸밈</small>`;
-        card.addEventListener('click', () => { Sound.ding(); placeIdx = i; showEditor(); });
+          `<span>${th.emoji} ${th.name}</span><small>${place.items.length}개 꾸밈</small>` +
+          (manageMode ? `<button class="place-del">✕</button>` : '');
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.place-del')) { confirmDelete(i); return; }
+          Sound.ding(); placeIdx = i; showEditor();
+        });
         grid.appendChild(card);
       });
-      if (data.places.length < 8) {
+      if (data.places.length < 8 && !manageMode) {
         const add = document.createElement('button');
         add.className = 'place-card add';
         add.innerHTML = `<div class="place-thumb addthumb">＋</div><span>새 공간 만들기</span>`;
         add.addEventListener('click', () => { Sound.blip(); showThemePicker(); });
         grid.appendChild(add);
       }
+      body.querySelector('.manage-toggle').addEventListener('click', () => { manageMode = !manageMode; Sound.blip(); showPlaces(); });
+    }
+
+    function confirmDelete(i) {
+      const place = data.places[i];
+      const th = Cartoon.theme(place.theme) || Cartoon.THEMES[0];
+      const refund = place.items.reduce((s, it) => s + refundOf(it), 0);
+      Sound.buzz();
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay';
+      overlay.innerHTML = `<div class="overlay-card"><h3>이 공간을 지울까요?</h3>
+        <p>${th.emoji} ${th.name}${refund > 0 ? `<br>담긴 과일 🍓${refund}개를 돌려줘요` : ''}</p>
+        <div class="overlay-buttons"><button class="btn big keep-b">아니요</button><button class="btn big primary del-b">네, 지울래요</button></div></div>`;
+      body.appendChild(overlay);
+      overlay.querySelector('.keep-b').addEventListener('click', () => { Sound.pop(); overlay.remove(); });
+      overlay.querySelector('.del-b').addEventListener('click', () => {
+        if (refund > 0) Player.addFruit(name, '🍓', refund);
+        data.places.splice(i, 1); save();
+        if (data.places.length === 0) manageMode = false;
+        Sound.yay(); overlay.remove(); showPlaces();
+      });
     }
 
     // ---------- 테마 고르기 ----------

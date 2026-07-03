@@ -53,6 +53,11 @@
   ];
   const FRUITS = ['🍓', '🍎', '🍇', '🍉', '🍑', '🍊'];
 
+  // 한 글자씩 (6세용) — 가나다라마바사아자차카타파하
+  const BASIC_SYL = ['가', '나', '다', '라', '마', '바', '사', '아', '자', '차', '카', '타', '파', '하'];
+  const BASIC_EMOJI = ['🎒', '🦋', '🍬', '🎵', '🍡', '🍌', '🍎', '👶', '🚗', '🍵', '📷', '🥁', '🧅', '😄'];
+  const BASIC_CAT = { id: 'basic', name: '가나다', words: BASIC_SYL.map((s, i) => [s, BASIC_EMOJI[i]]) };
+
   function josa(name, type) {
     const d = HangulData.decompose(name[name.length - 1]);
     const has = d && d.f !== '';
@@ -336,6 +341,7 @@
       if (mode === 'word') showWordMenu();
       else if (mode === 'sentence') showSentenceMenu();
       else if (mode === 'record') showRecord();
+      else if (mode === 'basic') startWordSet(BASIC_CAT, Math.min(Player.progress(name).basic || 0, BASIC_SYL.length - 1), () => GameShell.showSection('learn'));
       else if (mode === 'name') startWordSet({ id: 'myname_' + name, name: '내 이름', words: [[name, '😊']] }, 0, () => GameShell.showSection('learn'));
     }
     if (!Player.current()) Player.showPicker(body, { onPick: () => route() });
@@ -350,6 +356,7 @@
     };
   }
 
+  GameShell.registerGame({ id: 'learn-basic', section: 'learn', name: '가나다 쓰기', emoji: '🐣', color: '#fff0b8', desc: '한 글자씩 (처음)', init: (b, a) => run(b, a, 'basic') });
   GameShell.registerGame({ id: 'learn-word', section: 'learn', name: '단어 쓰기', emoji: '📝', color: '#ffe1a8', desc: '또박또박 단어', init: (b, a) => run(b, a, 'word') });
   GameShell.registerGame({ id: 'learn-sentence', section: 'learn', name: '문장 쓰기', emoji: '📖', color: '#e5d4ff', desc: '문장 따라쓰기', init: (b, a) => run(b, a, 'sentence') });
   GameShell.registerGame({ id: 'learn-name', section: 'learn', name: '내 이름 쓰기', emoji: '🔤', color: '#ffe0c2', desc: '내 이름 연습', init: (b, a) => run(b, a, 'name') });

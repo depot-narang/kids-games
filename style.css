@@ -75,12 +75,12 @@ body {
 .trash-toggle.on { background:#ffd0dd; }
 .garden-viewport { flex:1; overflow-x:auto; overflow-y:hidden; position:relative; -webkit-overflow-scrolling:touch; }
 .garden-canvas { position:relative; height:100%; }
-.garden-bg { position:absolute; transform:translate(-50%,-50%); pointer-events:none; }
+.garden-bg { position:absolute; transform:translate(-50%,-50%); pointer-events:none; filter:drop-shadow(0 4px 3px rgba(0,0,0,.14)); }
 .garden-bg svg { width:100%; height:auto; display:block; }
 .garden-item {
   position:absolute; transform:translate(-50%,-50%);
   width:clamp(56px, 12vh, 100px); cursor:grab; touch-action:none;
-  filter:drop-shadow(0 4px 3px rgba(0,0,0,.2));
+  filter:drop-shadow(0 6px 3px rgba(0,0,0,.25));
 }
 .garden-item svg { width:100%; height:auto; display:block; pointer-events:none; }
 .garden-item .emoji-fallback { font-size:clamp(40px,9vh,74px); }
@@ -105,6 +105,13 @@ body {
 
 /* 공간 목록 / 테마 고르기 */
 .places-screen { justify-content:flex-start; padding-top:20px; }
+.places-head { display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:center; }
+.place-del {
+  position:absolute; top:-8px; right:-8px; width:30px; height:30px; border-radius:50%;
+  border:none; background:#ff6f91; color:#fff; font-size:16px; cursor:pointer;
+  box-shadow:0 2px 5px rgba(0,0,0,.3);
+}
+.place-card { position:relative; }
 .places-grid {
   display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 190px)); gap:16px;
   width:min(94vw, 760px); justify-content:center;

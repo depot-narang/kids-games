@@ -153,12 +153,12 @@ GameShell.registerGame({
       Reward('🍓', Math.max(1, Math.floor(totalScore / 4)), window.innerWidth / 2, window.innerHeight / 2);
       let title, msg;
       if (players === 1) {
-        const bestKey = 'mole.best.' + speed.id;
-        const best = Store.get(bestKey, 0);
         const score = boards[0].score;
-        if (score > best) Store.set(bestKey, score);
-        title = '🎉 끝!';
-        msg = `${score}점! ${score > best ? '최고 기록이에요! 🏆' : `최고 기록: ${Math.max(best, score)}점`}`;
+        const rec = GameScore.record('mole_' + speed.id, score);
+        const rk = GameScore.rank('mole_' + speed.id);
+        title = `🎉 ${score}점!`;
+        msg = `${rec.isNew ? '🏆 새 최고 기록!' : `최고 기록: ${rec.best}점`}` +
+          (Player.current() ? `<br>우리 집 ${rk.total > 1 ? GameScore.medal(rk.rank) + ` (${rk.total}명 중)` : '🥇'}` : '');
       } else {
         const [a, b] = boards;
         title = a.score === b.score ? '🤝 비겼어요!' : (a.score > b.score ? '🍓 딸기팀 승리!' : '🍇 포도팀 승리!');

@@ -5,7 +5,7 @@ const GameShell = (() => {
 
   const SECTIONS = [
     { id: 'learn', name: '학습', emoji: '📚', color: '#cdeafe', desc: '글자와 문장 쓰기', needsPlayer: true },
-    { id: 'game', name: '게임', emoji: '🎮', color: '#ffd6e0', desc: '재미있는 놀이들' },
+    { id: 'game', name: '게임', emoji: '🎮', color: '#ffd6e0', desc: '재미있는 놀이들', needsPlayer: true },
     { id: 'garden', name: '내 정원', emoji: '🌷', color: '#d4f0c5', desc: '과일로 꾸며요', needsPlayer: true },
   ];
 
