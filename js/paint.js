@@ -27,6 +27,7 @@ GameShell.registerGame({
           <span class="toolbar-gap"></span>
           <button class="tool-btn clear-btn" title="다 지우기">🗑️</button>
           <button class="tool-btn save-btn" title="저장">💾</button>
+          <button class="btn primary send-btn" title="동물 마을로 보내기" style="font-size:16px">🏡 마을로!</button>
         </div>
       </div>`;
 
@@ -120,6 +121,49 @@ GameShell.registerGame({
       link.href = canvas.toDataURL('image/png');
       link.click();
       Sound.yay();
+    });
+
+    // 흰 여백을 잘라내고 작게 줄여서 데이터로 (동물 마을에 넣기 위해)
+    function croppedDrawing() {
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0, found = false;
+      for (let y = 0; y < canvas.height; y += 2) {
+        for (let x = 0; x < canvas.width; x += 2) {
+          const i = (y * canvas.width + x) * 4;
+          if (!(img[i] > 244 && img[i + 1] > 244 && img[i + 2] > 244)) {
+            found = true;
+            if (x < minX) minX = x; if (x > maxX) maxX = x;
+            if (y < minY) minY = y; if (y > maxY) maxY = y;
+          }
+        }
+      }
+      if (!found) return null;
+      const pad = 18;
+      minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+      maxX = Math.min(canvas.width, maxX + pad); maxY = Math.min(canvas.height, maxY + pad);
+      const cw = maxX - minX, ch = maxY - minY;
+      const scale = Math.min(1, 200 / Math.max(cw, ch));
+      const out = document.createElement('canvas');
+      out.width = Math.round(cw * scale); out.height = Math.round(ch * scale);
+      const octx = out.getContext('2d');
+      octx.drawImage(canvas, minX, minY, cw, ch, 0, 0, out.width, out.height);
+      return out.toDataURL('image/png');
+    }
+
+    body.querySelector('.send-btn').addEventListener('click', () => {
+      const url = croppedDrawing();
+      if (!url) {
+        const holder = body.querySelector('.paint-canvas-holder');
+        holder.classList.remove('shake'); void holder.offsetWidth; holder.classList.add('shake');
+        Sound.buzz();
+        return;
+      }
+      const draws = Store.get('freedrawings', []);
+      draws.push(url);
+      while (draws.length > 8) draws.shift();
+      Store.set('freedrawings', draws);
+      Sound.fanfare();
+      GameShell.go('habitat', { justAdded: true });
     });
 
     function pos(e) {

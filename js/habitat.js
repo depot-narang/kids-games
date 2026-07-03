@@ -29,6 +29,7 @@ GameShell.registerGame({
     }
 
     const data = Store.get('creatures', []);
+    const drawings = Store.get('freedrawings', []);
     let raf = null;
     let running = true;
     let sceneW = scene.clientWidth || 800;
@@ -37,13 +38,17 @@ GameShell.registerGame({
     window.addEventListener('resize', onResize);
 
     // 빈 마을 안내
-    if (data.length === 0) {
+    if (data.length === 0 && drawings.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'habitat-empty';
       empty.innerHTML = `
         <p>아직 마을에 친구가 없어요!</p>
-        <button class="btn big primary">🖍️ 색칠해서 친구 만들기</button>`;
-      empty.querySelector('button').addEventListener('click', () => { Sound.ding(); GameShell.go('coloring'); });
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+          <button class="btn big primary color-go">🖍️ 색칠해서 만들기</button>
+          <button class="btn big draw-go">🎨 그려서 만들기</button>
+        </div>`;
+      empty.querySelector('.color-go').addEventListener('click', () => { Sound.ding(); GameShell.go('coloring'); });
+      empty.querySelector('.draw-go').addEventListener('click', () => { Sound.ding(); GameShell.go('paint'); });
       scene.appendChild(empty);
     } else {
       // 새 친구 만들러 가기 버튼
@@ -53,6 +58,17 @@ GameShell.registerGame({
       makeBtn.style.cssText = 'position:absolute;right:14px;bottom:14px;z-index:10;';
       makeBtn.addEventListener('click', () => { Sound.ding(); GameShell.go('coloring'); });
       scene.appendChild(makeBtn);
+    }
+
+    // 만지면 폴짝 + 하트
+    function makeTappable(el, cr) {
+      el.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        cr.jumpUntil = performance.now() + 600;
+        Sound.heart();
+        const br = body.getBoundingClientRect();
+        spawnFx(body, e.clientX - br.left, e.clientY - br.top, randPick(['💖', '💕', '⭐', '🎵']));
+      });
     }
 
     // 생물 만들기
@@ -81,30 +97,40 @@ GameShell.registerGame({
       if (cr.behavior === 'fly') cr.y = randBetween(0.12, 0.45) * sceneH;
       if (cr.behavior === 'plant') cr.dir = 0;
 
-      // 만지면 폴짝!
-      el.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        cr.jumpUntil = performance.now() + 600;
-        Sound.heart();
-        const br = body.getBoundingClientRect();
-        spawnFx(body, e.clientX - br.left, e.clientY - br.top, randPick(['💖', '💕', '⭐', '🎵']));
-      });
-
+      makeTappable(el, cr);
       return cr;
     }).filter(Boolean);
 
-    // 방금 색칠을 마치고 왔다면 축하 이펙트
+    // 그림 그리기에서 완성한 자유 그림들도 마을을 걸어다녀요
+    drawings.forEach((url, i) => {
+      const el = document.createElement('div');
+      el.className = 'creature drawing';
+      const size = 96;
+      el.style.width = size + 'px';
+      el.style.height = size + 'px';
+      el.innerHTML = `<img src="${url}" alt="내 그림">`;
+      scene.appendChild(el);
+      const cr = {
+        el, size, behavior: 'walk',
+        x: (0.2 + (i * 0.21) % 0.7) * sceneW, y: 0,
+        dir: Math.random() < 0.5 ? -1 : 1,
+        speed: randBetween(0.3, 0.6),
+        phase: randBetween(0, Math.PI * 2), jumpUntil: 0,
+      };
+      makeTappable(el, cr);
+      creatures.push(cr);
+    });
+
+    // 방금 새 친구를 만들고 왔다면 축하 이펙트
     if (params.justAdded && creatures.length) {
       Sound.yay();
       setTimeout(() => {
-        const last = creatures[creatures.length - 1];
-        const r = last.el.getBoundingClientRect();
         const br = body.getBoundingClientRect();
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 8; i++) {
           setTimeout(() => spawnFx(body,
-            r.left - br.left + randBetween(0, r.width),
-            r.top - br.top + randBetween(0, r.height),
-            randPick(['✨', '🌟', '🎉', '💖'])), i * 150);
+            br.width * randBetween(0.25, 0.75),
+            br.height * randBetween(0.2, 0.5),
+            randPick(['✨', '🌟', '🎉', '💖', '🎊'])), i * 120);
         }
       }, 400);
     }

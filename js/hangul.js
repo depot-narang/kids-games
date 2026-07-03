@@ -1,4 +1,4 @@
-// ✏️ 한글 쓰기 — 획순을 따라 글자를 쓰고 과일을 모아요 (프로필/이어하기/매일 기록)
+// ✏️ 한글 쓰기 — 획순을 따라 글자를 쓰고 과일을 모아요 (단어/문장, 프로필/이어하기/매일 기록)
 GameShell.registerGame({
   id: 'hangul',
   name: '한글 쓰기',
@@ -20,7 +20,41 @@ GameShell.registerGame({
       { id: 'vehicle', name: '탈것', emoji: '🚗', words: [
         ['자동차', '🚗'], ['버스', '🚌'], ['기차', '🚂'], ['배', '⛵'], ['비행기', '✈️'], ['자전거', '🚲'] ] },
     ];
+
+    // ---------- 문장 데이터 ({가}{는}{를}{야}=받침에 맞춘 조사, {name}=아이 이름) ----------
+    const SENTENCES = [
+      { id: 'easy', name: '쉬운 문장', emoji: '🌟', items: [
+        { t: '나비가 날아요', e: '🦋' },
+        { t: '사과가 맛있어요', e: '🍎' },
+        { t: '해가 반짝여요', e: '☀️' },
+        { t: '꽃이 활짝 폈어요', e: '🌸' },
+        { t: '{name}{가} 활짝 웃어요', e: '😊' },
+        { t: '{name}{는} 최고야', e: '🏆' },
+        { t: '오리가 헤엄쳐요', e: '🦆' },
+        { t: '강아지가 뛰어요', e: '🐶' },
+      ] },
+      { id: 'tale', name: '전래·명작 동화', emoji: '📖', items: [
+        { t: '흥부가 제비를 도와줘요', e: '🐦' },
+        { t: '놀부는 심술쟁이', e: '😤' },
+        { t: '콩쥐가 예뻐요', e: '👧' },
+        { t: '토끼와 거북이가 달려요', e: '🐢' },
+        { t: '신데렐라가 춤을 춰요', e: '👗' },
+        { t: '백설공주가 잠들어요', e: '🍎' },
+        { t: '해님 달님 이야기', e: '🌙' },
+      ] },
+    ];
     const FRUITS = ['🍓', '🍎', '🍇', '🍉', '🍑', '🍊'];
+
+    function josa(name, type) {
+      const last = name[name.length - 1];
+      const d = HangulData.decompose(last);
+      const hasFinal = d && d.f !== '';
+      return ({ '가': hasFinal ? '이' : '가', '는': hasFinal ? '은' : '는', '를': hasFinal ? '을' : '를', '야': hasFinal ? '아' : '야' })[type];
+    }
+    function applyName(text, name) {
+      return text.replace(/\{name\}/g, name)
+        .replace(/\{(가|는|를|야)\}/g, (_, t) => josa(name, t));
+    }
 
     // ---------- 저장소 ----------
     const P = {
@@ -33,42 +67,31 @@ GameShell.registerGame({
       progress: (n) => Store.get(`hangul.${n}.progress`, {}),
       setProgress: (n, cat, idx) => { const p = P.progress(n); p[cat] = idx; Store.set(`hangul.${n}.progress`, p); },
       daily: (n) => Store.get(`hangul.${n}.daily`, {}),
-      addDaily: (n, c = 1) => {
-        const d = P.daily(n); const k = todayKey();
-        d[k] = (d[k] || 0) + c; Store.set(`hangul.${n}.daily`, d);
-      },
+      addDaily: (n, c = 1) => { const d = P.daily(n); const k = todayKey(); d[k] = (d[k] || 0) + c; Store.set(`hangul.${n}.daily`, d); },
     };
     function todayKey() { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`; }
 
     let mediaStream = null;
     function stopCamera() { if (mediaStream) { mediaStream.getTracks().forEach((t) => t.stop()); mediaStream = null; } }
-
     function speak(text) {
-      try {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'ko-KR'; u.rate = 0.8;
-        speechSynthesis.cancel(); speechSynthesis.speak(u);
-      } catch (e) { Sound.ding(); }
+      try { const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = 0.8; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+      catch (e) { Sound.ding(); }
     }
-
     function setHeaderFruits(name) {
       if (!name) { actions.innerHTML = ''; return; }
       const b = P.fruits(name);
-      const top = Object.entries(b).sort((a, c) => c[1] - a[1]).slice(0, 3)
-        .map(([f, n]) => `${f}${n}`).join(' ') || '🍓0';
+      const top = Object.entries(b).sort((a, c) => c[1] - a[1]).slice(0, 3).map(([f, n]) => `${f}${n}`).join(' ') || '🍓0';
       actions.innerHTML = `<div class="pill fruit-basket"><span>${top}</span></div>`;
+    }
+    function avatarHTML(p) {
+      return p && p.avatar && p.avatar.type === 'photo' ? `<img src="${p.avatar.value}" alt="">` : (p && p.avatar ? p.avatar.value : '🙂');
     }
 
     // ---------- 화면: 프로필 선택 ----------
     function showProfiles() {
-      stopCamera();
-      setHeaderFruits(null);
+      stopCamera(); setHeaderFruits(null);
       const profiles = P.list();
-      body.innerHTML = `
-        <div class="hangul-center">
-          <h3>누가 연습할까요?</h3>
-          <div class="profile-row"></div>
-        </div>`;
+      body.innerHTML = `<div class="hangul-center"><h3>누가 연습할까요?</h3><div class="profile-row"></div></div>`;
       const row = body.querySelector('.profile-row');
       profiles.forEach((p) => {
         const card = document.createElement('button');
@@ -86,13 +109,7 @@ GameShell.registerGame({
       }
     }
 
-    function avatarHTML(p) {
-      return p.avatar && p.avatar.type === 'photo'
-        ? `<img src="${p.avatar.value}" alt="${p.name}">`
-        : (p.avatar ? p.avatar.value : '🙂');
-    }
-
-    // ---------- 화면: 프로필 만들기 (이름 + 아바타/카메라) ----------
+    // ---------- 화면: 프로필 만들기 ----------
     function showCreateProfile() {
       stopCamera();
       const emojis = ['🐰', '🐻', '🐱', '🦊', '🐼', '🦄', '🐸', '🐥', '🦋', '🐙'];
@@ -102,26 +119,16 @@ GameShell.registerGame({
           <h3>새 친구 만들기</h3>
           <div class="avatar big-preview"></div>
           <input class="name-input" maxlength="6" placeholder="이름" />
-          <div style="display:flex;gap:8px;">
-            <button class="btn quick-joy">조이</button>
-            <button class="btn quick-chaea">채아</button>
-          </div>
+          <div style="display:flex;gap:8px;"><button class="btn quick-joy">조이</button><button class="btn quick-chaea">채아</button></div>
           <div class="avatar-options"></div>
           <button class="btn camera-btn">📷 얼굴 사진 찍기</button>
-          <div style="display:flex;gap:10px;">
-            <button class="btn cancel-btn">취소</button>
-            <button class="btn big primary create-btn">만들기 ✨</button>
-          </div>
+          <div style="display:flex;gap:10px;"><button class="btn cancel-btn">취소</button><button class="btn big primary create-btn">만들기 ✨</button></div>
         </div>`;
       const preview = body.querySelector('.big-preview');
       const nameInput = body.querySelector('.name-input');
       const opts = body.querySelector('.avatar-options');
-
-      function refreshPreview() {
-        preview.innerHTML = avatar.type === 'photo' ? `<img src="${avatar.value}">` : avatar.value;
-      }
-      refreshPreview();
-
+      const refresh = () => { preview.innerHTML = avatar.type === 'photo' ? `<img src="${avatar.value}">` : avatar.value; };
+      refresh();
       emojis.forEach((e, i) => {
         const o = document.createElement('button');
         o.className = 'avatar-opt' + (i === 0 ? ' selected' : '');
@@ -129,38 +136,30 @@ GameShell.registerGame({
         o.addEventListener('click', () => {
           avatar = { type: 'emoji', value: e };
           opts.querySelectorAll('.avatar-opt').forEach((x) => x.classList.remove('selected'));
-          o.classList.add('selected');
-          refreshPreview(); Sound.blip();
+          o.classList.add('selected'); refresh(); Sound.blip();
         });
         opts.appendChild(o);
       });
-
       body.querySelector('.quick-joy').addEventListener('click', () => { nameInput.value = '조이'; Sound.blip(); });
       body.querySelector('.quick-chaea').addEventListener('click', () => { nameInput.value = '채아'; Sound.blip(); });
       body.querySelector('.cancel-btn').addEventListener('click', () => { Sound.pop(); showProfiles(); });
-      body.querySelector('.camera-btn').addEventListener('click', () => openCamera((dataUrl) => {
-        avatar = { type: 'photo', value: dataUrl };
+      body.querySelector('.camera-btn').addEventListener('click', () => openCamera((url) => {
+        avatar = { type: 'photo', value: url };
         opts.querySelectorAll('.avatar-opt').forEach((x) => x.classList.remove('selected'));
-        refreshPreview();
+        refresh();
       }));
-
       body.querySelector('.create-btn').addEventListener('click', () => {
         const name = (nameInput.value || '').trim();
         if (!name) { nameInput.classList.add('shake'); setTimeout(() => nameInput.classList.remove('shake'), 400); Sound.buzz(); return; }
         const list = P.list();
         if (list.some((p) => p.name === name)) { nameInput.value = name + '2'; return; }
-        list.push({ name, avatar });
-        P.save(list);
-        Sound.yay();
-        P.setCurrent(name);
-        showCategories();
+        list.push({ name, avatar }); P.save(list); Sound.yay(); P.setCurrent(name); showCategories();
       });
     }
 
     function openCamera(onCapture) {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert('이 기기에서는 카메라를 쓸 수 없어요. 그림 아바타를 골라주세요!');
-        return;
+        alert('이 기기에서는 카메라를 쓸 수 없어요. 그림 아바타를 골라주세요!'); return;
       }
       const overlay = document.createElement('div');
       overlay.className = 'overlay';
@@ -168,37 +167,28 @@ GameShell.registerGame({
         <div class="overlay-card">
           <h3>📷 얼굴을 찍어요</h3>
           <video class="camera-view" autoplay playsinline></video>
-          <div class="overlay-buttons">
-            <button class="btn cam-cancel">취소</button>
-            <button class="btn big primary cam-shoot">찰칵! 📸</button>
-          </div>
+          <div class="overlay-buttons"><button class="btn cam-cancel">취소</button><button class="btn big primary cam-shoot">찰칵! 📸</button></div>
         </div>`;
       body.appendChild(overlay);
       const video = overlay.querySelector('video');
       const close = () => { stopCamera(); overlay.remove(); };
       overlay.querySelector('.cam-cancel').addEventListener('click', () => { Sound.pop(); close(); });
-
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
         .then((stream) => { mediaStream = stream; video.srcObject = stream; })
         .catch(() => { alert('카메라를 켤 수 없어요. 그림 아바타를 골라주세요!'); close(); });
-
       overlay.querySelector('.cam-shoot').addEventListener('click', () => {
         if (!video.videoWidth) return;
         const size = 160;
-        const c = document.createElement('canvas');
-        c.width = size; c.height = size;
+        const c = document.createElement('canvas'); c.width = size; c.height = size;
         const cx = c.getContext('2d');
-        // 정사각으로 가운데 잘라서 저장 (거울 반전 유지)
         const s = Math.min(video.videoWidth, video.videoHeight);
         cx.translate(size, 0); cx.scale(-1, 1);
         cx.drawImage(video, (video.videoWidth - s) / 2, (video.videoHeight - s) / 2, s, s, 0, 0, size, size);
-        onCapture(c.toDataURL('image/jpeg', 0.7));
-        Sound.yay();
-        close();
+        onCapture(c.toDataURL('image/jpeg', 0.7)); Sound.yay(); close();
       });
     }
 
-    // ---------- 화면: 카테고리(주제) 선택 ----------
+    // ---------- 화면: 주제 선택 ----------
     function showCategories() {
       stopCamera();
       const name = P.current();
@@ -207,11 +197,12 @@ GameShell.registerGame({
       body.innerHTML = `
         <div class="hangul-center">
           <div style="display:flex;align-items:center;gap:10px;">
-            <div class="avatar small">${avatarHTML(prof)}</div>
-            <h3>${name}야, 무엇을 써볼까?</h3>
+            <div class="avatar small">${avatarHTML(prof)}</div><h3>${name}야, 무엇을 써볼까?</h3>
           </div>
           <div class="template-grid cat-grid"></div>
-          <div style="display:flex;gap:10px;">
+          <div class="pill" style="background:#fff3d6">✏️ 문장 쓰기</div>
+          <div class="overlay-buttons sentence-row"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
             <button class="btn myname-btn">🔤 내 이름 쓰기</button>
             <button class="btn record-btn">📅 오늘까지 기록</button>
             <button class="btn switch-btn">👭 친구 바꾸기</button>
@@ -219,39 +210,44 @@ GameShell.registerGame({
         </div>`;
       const grid = body.querySelector('.cat-grid');
       CATEGORIES.forEach((cat) => {
-        const prog = P.progress(name)[cat.id] || 0;
+        const prog = Math.min(P.progress(name)[cat.id] || 0, cat.words.length);
         const card = document.createElement('button');
         card.className = 'template-card';
-        card.innerHTML = `<div style="font-size:44px">${cat.emoji}</div><span>${cat.name}</span>` +
-          `<small style="color:#a99;font-size:13px">${Math.min(prog, cat.words.length)}/${cat.words.length}</small>`;
-        card.addEventListener('click', () => { Sound.ding(); startCategory(cat); });
+        card.innerHTML = `<div style="font-size:44px">${cat.emoji}</div><span>${cat.name}</span><small style="color:#a99;font-size:13px">${prog}/${cat.words.length}</small>`;
+        card.addEventListener('click', () => { Sound.ding(); startWordSet(cat, Math.min(prog, cat.words.length - 1)); });
         grid.appendChild(card);
+      });
+      const srow = body.querySelector('.sentence-row');
+      SENTENCES.forEach((set) => {
+        const prog = Math.min(P.progress(name)[set.id] || 0, set.items.length);
+        const b = document.createElement('button');
+        b.className = 'btn big primary';
+        b.innerHTML = `${set.emoji} ${set.name} <small style="opacity:.8">${prog}/${set.items.length}</small>`;
+        b.addEventListener('click', () => { Sound.ding(); startSentenceSet(set, Math.min(prog, set.items.length - 1)); });
+        srow.appendChild(b);
       });
       body.querySelector('.myname-btn').addEventListener('click', () => {
         Sound.ding();
-        startCategory({ id: 'myname_' + name, name: '내 이름', emoji: '🔤', words: [[name, '😊']] });
+        startWordSet({ id: 'myname_' + name, name: '내 이름', words: [[name, '😊']] }, 0);
       });
       body.querySelector('.record-btn').addEventListener('click', () => { Sound.ding(); showRecord(); });
       body.querySelector('.switch-btn').addEventListener('click', () => { Sound.pop(); showProfiles(); });
     }
 
-    // ---------- 화면: 매일 기록 달력 ----------
+    // ---------- 화면: 매일 기록 ----------
     function showRecord() {
       const name = P.current();
       const daily = P.daily(name);
-      const now = new Date();
-      const year = now.getFullYear(), month = now.getMonth();
+      const now = new Date(); const year = now.getFullYear(), month = now.getMonth();
       const first = new Date(year, month, 1).getDay();
       const days = new Date(year, month + 1, 0).getDate();
-      let cells = '';
+      let cells = ''; let total = 0;
       ['일', '월', '화', '수', '목', '금', '토'].forEach((d) => { cells += `<div class="cal-head">${d}</div>`; });
       for (let i = 0; i < first; i++) cells += `<div></div>`;
-      let total = 0;
       for (let d = 1; d <= days; d++) {
         const cnt = daily[`${year}-${month + 1}-${d}`] || 0;
         if (cnt) total += cnt;
-        cells += `<div class="cal-cell ${cnt ? 'has' : ''}">
-          <div>${d}</div>${cnt ? `<div class="cal-stamp">✏️</div><div>${cnt}자</div>` : ''}</div>`;
+        cells += `<div class="cal-cell ${cnt ? 'has' : ''}"><div>${d}</div>${cnt ? `<div class="cal-stamp">✏️</div><div>${cnt}자</div>` : ''}</div>`;
       }
       body.innerHTML = `
         <div class="hangul-center">
@@ -263,34 +259,89 @@ GameShell.registerGame({
       body.querySelector('.back-cat').addEventListener('click', () => { Sound.pop(); showCategories(); });
     }
 
-    // ---------- 화면: 쓰기 ----------
-    let raf = null;
-    let resizeCleanup = null;
-    function startCategory(cat) {
+    // ---------- 진입점: 단어 / 문장 ----------
+    function startWordSet(cat, wIdx) {
       const name = P.current();
-      let wIdx = Math.min(P.progress(name)[cat.id] || 0, cat.words.length - 1);
-      renderWord(cat, wIdx, name);
+      const [word, emoji] = cat.words[wIdx];
+      writeScreen({
+        emoji, chunks: [[...word]], speakText: word,
+        onComplete: () => {
+          const bonus = randPick(FRUITS.slice(1));
+          const cnt = [...word].length >= 3 ? 2 : 1;
+          P.addFruit(name, bonus, cnt);
+          const nextIdx = wIdx + 1;
+          P.setProgress(name, cat.id, Math.max(P.progress(name)[cat.id] || 0, Math.min(nextIdx, cat.words.length)));
+          showLessonDone({
+            title: `"${word}" 완성!`, emoji, bonus, bonusCount: cnt,
+            allDoneMsg: nextIdx >= cat.words.length ? '이 주제를 다 썼어요! 🏆' : '',
+            onNext: nextIdx < cat.words.length ? () => startWordSet(cat, nextIdx) : null,
+          });
+        },
+      });
     }
 
-    function renderWord(cat, wIdx, name) {
+    function startSentenceSet(set, sIdx) {
+      const name = P.current();
+      const raw = set.items[sIdx];
+      const text = applyName(raw.t, name);
+      const eojeols = text.split(' ').filter(Boolean).map((w) => [...w]);
+      writeScreen({
+        emoji: raw.e, chunks: eojeols, speakText: text,
+        onComplete: () => {
+          P.addFruit(name, '🍉', 2);
+          const nextIdx = sIdx + 1;
+          P.setProgress(name, set.id, Math.max(P.progress(name)[set.id] || 0, Math.min(nextIdx, set.items.length)));
+          showLessonDone({
+            title: `"${text}" 완성!`, emoji: raw.e, bonus: '🍉', bonusCount: 2,
+            allDoneMsg: nextIdx >= set.items.length ? '이 이야기를 다 썼어요! 📚' : '',
+            onNext: nextIdx < set.items.length ? () => startSentenceSet(set, nextIdx) : null,
+          });
+        },
+      });
+    }
+
+    function showLessonDone({ title, emoji, bonus, bonusCount, allDoneMsg, onNext }) {
+      Sound.fanfare();
+      setHeaderFruits(P.current());
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay';
+      overlay.innerHTML = `
+        <div class="overlay-card">
+          <h3>🎉 ${title}</h3>
+          <p style="font-size:34px">${emoji} ${bonus.repeat(bonusCount)} 획득!</p>
+          <p>${allDoneMsg}</p>
+          <div class="overlay-buttons">
+            ${onNext ? '<button class="btn big primary next-w">다음 →</button>' : ''}
+            <button class="btn big list-w">📚 주제 고르기</button>
+          </div>
+        </div>`;
+      body.appendChild(overlay);
+      const nb = overlay.querySelector('.next-w');
+      if (nb) nb.addEventListener('click', () => { Sound.ding(); onNext(); });
+      overlay.querySelector('.list-w').addEventListener('click', () => { Sound.ding(); showCategories(); });
+    }
+
+    // ---------- 쓰기 화면 (여러 글자를 한 번에 보여주고 한 글자씩 씀) ----------
+    let raf = null;
+    let resizeCleanup = null;
+
+    function writeScreen(cfg) {
       if (raf) cancelAnimationFrame(raf);
       if (resizeCleanup) { resizeCleanup(); resizeCleanup = null; }
+      const name = P.current();
       setHeaderFruits(name);
-      const [word, emoji] = cat.words[wIdx];
-      const chars = [...word];
-      let charIdx = 0;
+
+      let chunkIdx = 0, cellIdx = 0, strokeIdx = 0;
+      let drawnPath = [], fails = 0, demo = null;
 
       body.innerHTML = `
         <div class="write-wrap">
           <div class="write-prompt">
-            <div class="write-emoji">${emoji}</div>
+            <div class="write-emoji">${cfg.emoji}</div>
             <div class="write-word"></div>
-            <button class="btn" style="font-size:15px;padding:6px 14px">🔊 들어보기</button>
+            <button class="btn listen-btn" style="font-size:15px;padding:6px 14px">🔊 들어보기</button>
           </div>
-          <div class="write-canvas-holder">
-            <canvas class="guide-layer"></canvas>
-            <canvas class="ink-layer"></canvas>
-          </div>
+          <div class="write-canvas-holder"><canvas class="guide-layer"></canvas><canvas class="ink-layer"></canvas></div>
           <div class="write-tools">
             <button class="btn demo-btn">👀 어떻게 써요?</button>
             <button class="btn erase-btn">🧽 지우기</button>
@@ -299,264 +350,186 @@ GameShell.registerGame({
         </div>`;
 
       const wordEl = body.querySelector('.write-word');
-      function paintWordProgress() {
-        wordEl.innerHTML = chars.map((c, i) =>
-          `<span class="wchar ${i < charIdx ? 'done' : i === charIdx ? 'current' : ''}">${c}</span>`).join('');
-      }
-      paintWordProgress();
-
-      body.querySelector('.write-prompt button').addEventListener('click', () => speak(word));
-      speak(word);
-
+      const holder = body.querySelector('.write-canvas-holder');
       const guide = body.querySelector('.guide-layer');
       const ink = body.querySelector('.ink-layer');
-      const holder = body.querySelector('.write-canvas-holder');
+      let box, gctx, ictx, cellSize, cellStrokesAll = [];
 
-      let box, gctx, ictx;
-      function fit() {
+      // 전체 텍스트(현재 글자 강조) — 아이가 단어/문장 전체를 항상 봐요
+      function paintHeader() {
+        let html = '';
+        cfg.chunks.forEach((chunk, ci) => {
+          if (ci > 0) html += `<span class="wspace"></span>`;
+          chunk.forEach((ch, si) => {
+            const cls = ci < chunkIdx || (ci === chunkIdx && si < cellIdx) ? 'done'
+              : (ci === chunkIdx && si === cellIdx) ? 'current' : '';
+            html += `<span class="wchar ${cls}">${ch}</span>`;
+          });
+        });
+        wordEl.innerHTML = html;
+      }
+
+      function layoutHolder() {
+        const N = cfg.chunks[chunkIdx].length;
+        const cell = Math.min(window.innerWidth * 0.94 / N, window.innerHeight * 0.42, 240);
+        holder.style.width = cell * N + 'px';
+        holder.style.height = cell + 'px';
+        holder.querySelectorAll('.cell-sep').forEach((s) => s.remove());
+        for (let i = 1; i < N; i++) {
+          const sep = document.createElement('div');
+          sep.className = 'cell-sep'; sep.style.left = (cell * i) + 'px';
+          holder.appendChild(sep);
+        }
         const g = fitCanvas(guide); box = { w: g.w, h: g.h }; gctx = g.ctx;
         const k = fitCanvas(ink); ictx = k.ctx;
-        drawGuide();
+        cellSize = box.h;
+        computeStrokes();
       }
 
-      let strokes = [];         // 현재 글자의 획들 (픽셀 좌표)
-      let strokeIdx = 0;        // 지금 써야 할 획
-      let drawnPath = [];       // 사용자가 긋는 중인 경로
-      let fails = 0;
-      let demo = null;          // {t}
-
-      function loadChar() {
-        drawnPath = []; strokeIdx = 0; fails = 0;
-        const ch = chars[charIdx];
-        const cell = HangulData.getSyllableStrokes(ch);
-        const size = box.w;
-        const toPx = (s) => s.c
-          ? { c: [s.c[0] / 100 * size, s.c[1] / 100 * size, s.c[2] / 100 * size] }
-          : { p: s.p.map((pt) => [pt[0] / 100 * size, pt[1] / 100 * size]) };
-        strokes = cell ? cell.map(toPx) : [];
-        clearInk();
-        startDemo();
-        drawGuide();
+      function computeStrokes() {
+        const chunk = cfg.chunks[chunkIdx];
+        cellStrokesAll = chunk.map((ch, ci) => {
+          const cell = HangulData.getSyllableStrokes(ch);
+          if (!cell) return [];
+          const ox = ci * cellSize;
+          return cell.map((s) => s.c
+            ? { c: [ox + s.c[0] / 100 * cellSize, s.c[1] / 100 * cellSize, s.c[2] / 100 * cellSize] }
+            : { p: s.p.map((pt) => [ox + pt[0] / 100 * cellSize, pt[1] / 100 * cellSize]) });
+        });
       }
-
-      function clearInk() { if (ictx) ictx.clearRect(0, 0, box.w, box.h); }
 
       // ------- 그리기 유틸 -------
       function strokePts(s, n = 26) {
-        if (s.c) {
-          const [cx, cy, r] = s.c; const arr = [];
-          for (let i = 0; i <= n; i++) { const a = -Math.PI / 2 + (i / n) * Math.PI * 2; arr.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
-          return arr;
-        }
-        // 폴리라인을 균등 샘플
-        const pts = s.p; const out = [];
-        for (let i = 0; i < pts.length - 1; i++) {
-          const [a, b] = [pts[i], pts[i + 1]];
-          for (let t = 0; t < 1; t += 0.12) out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
-        }
-        out.push(pts[pts.length - 1]);
-        return out;
+        if (s.c) { const [cx, cy, r] = s.c; const a = []; for (let i = 0; i <= n; i++) { const ang = -Math.PI / 2 + (i / n) * Math.PI * 2; a.push([cx + Math.cos(ang) * r, cy + Math.sin(ang) * r]); } return a; }
+        const out = [];
+        for (let i = 0; i < s.p.length - 1; i++) { const [a, b] = [s.p[i], s.p[i + 1]]; for (let t = 0; t < 1; t += 0.12) out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
+        out.push(s.p[s.p.length - 1]); return out;
       }
-      function drawStrokePath(ctx, s) {
+      function tracePath(ctx, s) {
         ctx.beginPath();
-        if (s.c) { ctx.arc(s.c[0], s.c[1], s.c[2], -Math.PI / 2, Math.PI * 1.5); }
-        else { s.p.forEach((pt, i) => i ? ctx.lineTo(pt[0], pt[1]) : ctx.moveTo(pt[0], pt[1])); }
+        if (s.c) ctx.arc(s.c[0], s.c[1], s.c[2], -Math.PI / 2, Math.PI * 1.5);
+        else s.p.forEach((pt, i) => i ? ctx.lineTo(pt[0], pt[1]) : ctx.moveTo(pt[0], pt[1]));
         ctx.stroke();
       }
+      const lineW = () => Math.max(12, cellSize * 0.075);
 
       function drawGuide() {
         if (!gctx) return;
-        const size = box.w;
         gctx.clearRect(0, 0, box.w, box.h);
-        // 십자 안내선
-        gctx.strokeStyle = '#f0eef5'; gctx.lineWidth = 2; gctx.setLineDash([8, 8]);
-        gctx.beginPath(); gctx.moveTo(size / 2, 0); gctx.lineTo(size / 2, size);
-        gctx.moveTo(0, size / 2); gctx.lineTo(size, size / 2); gctx.stroke();
-        gctx.setLineDash([]);
-        const lw = Math.max(14, size * 0.075);
         gctx.lineCap = 'round'; gctx.lineJoin = 'round';
-        // 모든 획: 아직 안 쓴 건 연하게, 쓴 건 진하게
-        strokes.forEach((s, i) => {
-          if (i < strokeIdx) return; // 완료 획은 ink 레이어에서
-          gctx.strokeStyle = i === strokeIdx ? '#cfe6ff' : '#eee7ef';
-          gctx.lineWidth = lw;
-          drawStrokePath(gctx, s);
+        const lw = lineW();
+        cellStrokesAll.forEach((strokes, ci) => {
+          if (ci < cellIdx) return; // 완료 글자는 ink 레이어
+          strokes.forEach((s, i) => {
+            if (ci === cellIdx && i < strokeIdx) return;
+            gctx.strokeStyle = (ci === cellIdx && i === strokeIdx) ? '#cfe6ff' : (ci === cellIdx ? '#eee7ef' : '#f3eef6');
+            gctx.lineWidth = lw; tracePath(gctx, s);
+          });
         });
-        // 현재 획: 시작점·방향화살표·번호
-        const cur = strokes[strokeIdx];
+        const cur = cellStrokesAll[cellIdx] && cellStrokesAll[cellIdx][strokeIdx];
         if (cur) {
-          const pts = strokePts(cur);
-          const start = pts[0], end = pts[pts.length - 1];
-          // 데모 점
+          const pts = strokePts(cur); const start = pts[0], end = pts[pts.length - 1];
           if (demo) {
-            const gi = Math.min(pts.length - 1, Math.floor(demo.t * (pts.length - 1)));
-            const gp = pts[gi];
-            gctx.fillStyle = '#ff6f91';
-            gctx.beginPath(); gctx.arc(gp[0], gp[1], lw * 0.5, 0, Math.PI * 2); gctx.fill();
+            const gp = pts[Math.min(pts.length - 1, Math.floor(demo.t * (pts.length - 1)))];
+            gctx.fillStyle = '#ff6f91'; gctx.beginPath(); gctx.arc(gp[0], gp[1], lw * 0.5, 0, Math.PI * 2); gctx.fill();
           }
-          // 시작점
-          gctx.fillStyle = '#3ba0ff';
-          gctx.beginPath(); gctx.arc(start[0], start[1], lw * 0.42, 0, Math.PI * 2); gctx.fill();
-          // 번호
-          gctx.fillStyle = '#fff'; gctx.font = `bold ${lw * 0.6}px Jua, sans-serif`;
-          gctx.textAlign = 'center'; gctx.textBaseline = 'middle';
+          gctx.fillStyle = '#3ba0ff'; gctx.beginPath(); gctx.arc(start[0], start[1], lw * 0.42, 0, Math.PI * 2); gctx.fill();
+          gctx.fillStyle = '#fff'; gctx.font = `bold ${lw * 0.6}px Jua, sans-serif`; gctx.textAlign = 'center'; gctx.textBaseline = 'middle';
           gctx.fillText(String(strokeIdx + 1), start[0], start[1]);
-          // 방향 화살표
-          const b = pts[pts.length - 2] || start;
-          const ang = Math.atan2(end[1] - b[1], end[0] - b[0]);
-          gctx.save(); gctx.translate(end[0], end[1]); gctx.rotate(ang);
-          gctx.fillStyle = '#ff6f91';
-          const a = lw * 0.7;
-          gctx.beginPath(); gctx.moveTo(0, 0); gctx.lineTo(-a, -a * 0.6); gctx.lineTo(-a, a * 0.6); gctx.closePath(); gctx.fill();
-          gctx.restore();
+          const b = pts[pts.length - 2] || start; const ang = Math.atan2(end[1] - b[1], end[0] - b[0]);
+          gctx.save(); gctx.translate(end[0], end[1]); gctx.rotate(ang); gctx.fillStyle = '#ff6f91';
+          const a = lw * 0.7; gctx.beginPath(); gctx.moveTo(0, 0); gctx.lineTo(-a, -a * 0.6); gctx.lineTo(-a, a * 0.6); gctx.closePath(); gctx.fill(); gctx.restore();
         }
       }
 
-      function drawCompletedInk() {
-        clearInk();
-        const lw = Math.max(14, box.w * 0.075);
-        ictx.lineCap = 'round'; ictx.lineJoin = 'round';
-        ictx.strokeStyle = '#ff8fab';
-        ictx.lineWidth = lw;
-        for (let i = 0; i < strokeIdx; i++) drawStrokePath(ictx, strokes[i]);
+      function drawInk() {
+        if (!ictx) return;
+        ictx.clearRect(0, 0, box.w, box.h);
+        ictx.lineCap = 'round'; ictx.lineJoin = 'round'; ictx.strokeStyle = '#ff8fab'; ictx.lineWidth = lineW();
+        cellStrokesAll.forEach((strokes, ci) => {
+          if (ci < cellIdx) strokes.forEach((s) => tracePath(ictx, s));
+          else if (ci === cellIdx) for (let i = 0; i < strokeIdx; i++) tracePath(ictx, strokes[i]);
+        });
       }
 
-      // ------- 데모 애니메이션 -------
       function startDemo() { demo = { t: 0 }; }
       function loop() {
-        if (demo) {
-          demo.t += 0.02;
-          if (demo.t >= 1.15) demo = null;
-          drawGuide();
-        }
-        // 사용자가 긋는 잉크
+        if (demo) { demo.t += 0.02; if (demo.t >= 1.15) demo = null; drawGuide(); }
         if (drawnPath.length > 1) {
-          drawCompletedInk();
-          const lw = Math.max(14, box.w * 0.075);
-          ictx.strokeStyle = '#ffb3c6'; ictx.lineWidth = lw; ictx.lineCap = 'round'; ictx.lineJoin = 'round';
-          ictx.beginPath();
-          drawnPath.forEach((p, i) => i ? ictx.lineTo(p[0], p[1]) : ictx.moveTo(p[0], p[1]));
-          ictx.stroke();
+          drawInk();
+          ictx.strokeStyle = '#ffb3c6'; ictx.lineWidth = lineW(); ictx.lineCap = 'round'; ictx.lineJoin = 'round';
+          ictx.beginPath(); drawnPath.forEach((p, i) => i ? ictx.lineTo(p[0], p[1]) : ictx.moveTo(p[0], p[1])); ictx.stroke();
         }
         raf = requestAnimationFrame(loop);
       }
 
       // ------- 판정 -------
-      function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
-      function pathLen(pts) { let l = 0; for (let i = 1; i < pts.length; i++) l += dist(pts[i - 1], pts[i]); return l; }
+      const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+      const pathLen = (pts) => { let l = 0; for (let i = 1; i < pts.length; i++) l += dist(pts[i - 1], pts[i]); return l; };
       function judge() {
-        const cur = strokes[strokeIdx];
+        const cur = cellStrokesAll[cellIdx] && cellStrokesAll[cellIdx][strokeIdx];
         if (!cur || drawnPath.length < 2) return false;
-        const target = strokePts(cur);
-        const R = box.w * 0.3;
-        const dStart = drawnPath[0], dEnd = drawnPath[drawnPath.length - 1];
-        const tStart = target[0], tEnd = target[target.length - 1];
-        // 방향 무관하게 시작/끝이 양 끝에 닿았는지
-        const okFwd = dist(dStart, tStart) < R && dist(dEnd, tEnd) < R;
-        const okRev = dist(dStart, tEnd) < R && dist(dEnd, tStart) < R;
+        const target = strokePts(cur); const R = cellSize * 0.32;
+        const dS = drawnPath[0], dE = drawnPath[drawnPath.length - 1];
+        const tS = target[0], tE = target[target.length - 1];
+        const okFwd = dist(dS, tS) < R && dist(dE, tE) < R;
+        const okRev = dist(dS, tE) < R && dist(dE, tS) < R;
         if (!okFwd && !okRev) return false;
-        // 길이가 충분한지 (대충 문지르기 방지)
         if (pathLen(drawnPath) < pathLen(target) * 0.5) return false;
-        // 획을 대체로 따라갔는지 (샘플 커버리지)
-        const R2 = box.w * 0.34;
+        const R2 = cellSize * 0.36;
         const samples = [target[0], target[Math.floor(target.length / 2)], target[target.length - 1]];
-        for (const sp of samples) {
-          if (!drawnPath.some((dp) => dist(dp, sp) < R2)) return false;
-        }
+        for (const sp of samples) if (!drawnPath.some((dp) => dist(dp, sp) < R2)) return false;
         return true;
       }
 
       function onStrokeDone() {
-        strokeIdx++;
-        drawnPath = [];
-        Sound.blip();
-        drawCompletedInk();
-        drawGuide();
-        if (strokeIdx >= strokes.length) setTimeout(charComplete, 150);
+        strokeIdx++; drawnPath = []; Sound.blip(); drawInk(); drawGuide();
+        if (strokeIdx >= cellStrokesAll[cellIdx].length) setTimeout(cellComplete, 130);
         else startDemo();
       }
-
-      function charComplete() {
+      function cellComplete() {
         Sound.heart();
         const r = holder.getBoundingClientRect(); const br = body.getBoundingClientRect();
-        spawnFx(body, r.left - br.left + r.width / 2, r.top - br.top + r.height / 2, '⭐');
-        P.addFruit(name, '🍓');
-        P.addDaily(name);
-        setHeaderFruits(name);
-        charIdx++;
-        paintWordProgress();
-        if (charIdx >= chars.length) setTimeout(wordComplete, 300);
-        else setTimeout(loadChar, 400);
+        spawnFx(body, r.left - br.left + (cellIdx + 0.5) * (r.width / cfg.chunks[chunkIdx].length), r.top - br.top + r.height / 2, '⭐');
+        P.addFruit(name, '🍓'); P.addDaily(name); setHeaderFruits(name);
+        cellIdx++; strokeIdx = 0; paintHeader();
+        if (cellIdx >= cfg.chunks[chunkIdx].length) setTimeout(chunkComplete, 200);
+        else { drawInk(); startDemo(); drawGuide(); }
       }
-
-      function wordComplete() {
-        Sound.fanfare();
-        const bonus = randPick(FRUITS.slice(1));
-        P.addFruit(name, bonus, chars.length >= 3 ? 2 : 1);
-        setHeaderFruits(name);
-        const nextIdx = wIdx + 1;
-        P.setProgress(name, cat.id, Math.max(P.progress(name)[cat.id] || 0, Math.min(nextIdx, cat.words.length)));
-        const done = nextIdx >= cat.words.length;
-        const overlay = document.createElement('div');
-        overlay.className = 'overlay';
-        overlay.innerHTML = `
-          <div class="overlay-card">
-            <h3>🎉 "${word}" 완성!</h3>
-            <p style="font-size:34px">${emoji} ${bonus}${chars.length >= 3 ? bonus : ''} 획득!</p>
-            <p>${done ? '이 주제를 다 썼어요! 대단해요! 🏆' : ''}</p>
-            <div class="overlay-buttons">
-              ${done ? '' : '<button class="btn big primary next-w">다음 단어 →</button>'}
-              <button class="btn big list-w">📚 주제 고르기</button>
-            </div>
-          </div>`;
-        body.appendChild(overlay);
-        const nb = overlay.querySelector('.next-w');
-        if (nb) nb.addEventListener('click', () => { Sound.ding(); renderWord(cat, nextIdx, name); });
-        overlay.querySelector('.list-w').addEventListener('click', () => { Sound.ding(); showCategories(); });
+      function chunkComplete() {
+        chunkIdx++; cellIdx = 0; strokeIdx = 0;
+        if (chunkIdx >= cfg.chunks.length) { cfg.onComplete(); return; }
+        paintHeader(); layoutHolder(); startDemo(); drawInk(); drawGuide();
       }
 
       // ------- 입력 -------
-      function pos(e) { const r = ink.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+      const pos = (e) => { const r = ink.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
       ink.addEventListener('pointerdown', (e) => { e.preventDefault(); demo = null; drawnPath = [pos(e)]; });
       ink.addEventListener('pointermove', (e) => { if (drawnPath.length) drawnPath.push(pos(e)); });
       const endDraw = () => {
         if (!drawnPath.length) return;
         if (judge()) onStrokeDone();
-        else {
-          fails++;
-          drawnPath = [];
-          drawCompletedInk();
-          Sound.buzz();
-          if (fails >= 2) startDemo(); // 두 번 틀리면 다시 보여주기
-        }
+        else { fails++; drawnPath = []; drawInk(); Sound.buzz(); if (fails >= 2) startDemo(); }
       };
       ink.addEventListener('pointerup', endDraw);
       ink.addEventListener('pointercancel', endDraw);
       ink.addEventListener('pointerleave', endDraw);
 
+      body.querySelector('.listen-btn').addEventListener('click', () => speak(cfg.speakText));
       body.querySelector('.demo-btn').addEventListener('click', () => { Sound.blip(); startDemo(); });
-      body.querySelector('.erase-btn').addEventListener('click', () => { Sound.pop(); drawnPath = []; drawCompletedInk(); });
-      body.querySelector('.skip-btn').addEventListener('click', () => {
-        Sound.pop();
-        if (strokeIdx < strokes.length - 0 && charIdx < chars.length) {
-          // 글자 건너뛰기
-          charIdx++; paintWordProgress();
-          if (charIdx >= chars.length) wordComplete(); else loadChar();
-        }
-      });
+      body.querySelector('.erase-btn').addEventListener('click', () => { Sound.pop(); drawnPath = []; drawInk(); });
+      body.querySelector('.skip-btn').addEventListener('click', () => { Sound.pop(); cellComplete(); });
 
-      const onResize = () => { fit(); loadChar(); };
+      const onResize = () => { layoutHolder(); drawInk(); drawGuide(); };
       window.addEventListener('resize', onResize);
       resizeCleanup = () => window.removeEventListener('resize', onResize);
 
-      fit();
-      loadChar();
-      loop();
+      paintHeader(); layoutHolder(); startDemo(); drawInk(); drawGuide(); loop();
+      speak(cfg.speakText);
     }
 
     // 첫 화면
-    if (P.list().length === 0) showCreateProfile();
-    else showProfiles();
+    if (P.list().length === 0) showCreateProfile(); else showProfiles();
 
     return {
       destroy() {
