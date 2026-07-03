@@ -32,5 +32,5 @@ RESULT=$(curl -sf -X POST \
   "https://api.netlify.com/api/v1/sites/$SITE_ID/deploys")
 
 rm -f "$ZIP"
-echo "$RESULT" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f"✅ 배포 완료! → https://{d[\"subdomain\"]}.netlify.app (상태: {d[\"state\"]})")' \
+echo "$RESULT" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("✅ 배포 완료! → https://" + d["subdomain"] + ".netlify.app (상태: " + d["state"] + ")")' \
   || echo "✅ 배포 요청을 보냈어요. 잠시 후 사이트를 확인해보세요."
