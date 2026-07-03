@@ -310,6 +310,74 @@ canvas.fill { position:absolute; inset:0; width:100%; height:100%; display:block
 }
 .habitat-empty p { font-size:clamp(19px,2.6vw,26px); background:rgba(255,255,255,.85); padding:12px 24px; border-radius:999px; }
 
+/* ---------- 한글 쓰기 ---------- */
+.hangul-center { height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:16px; overflow-y:auto; }
+.hangul-center h3 { font-size:clamp(22px,3.4vw,32px); }
+
+/* 프로필 선택 */
+.profile-row { display:flex; gap:22px; flex-wrap:wrap; justify-content:center; }
+.profile-card {
+  border:none; background:#fff; border-radius:24px; padding:18px 22px;
+  display:flex; flex-direction:column; align-items:center; gap:10px; cursor:pointer;
+  box-shadow:0 6px 0 rgba(0,0,0,.12); font-family:inherit; transition:transform .12s;
+}
+.profile-card:active { transform:scale(.94); }
+.avatar {
+  width:104px; height:104px; border-radius:50%; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  font-size:60px; background:#ffe3ef; border:4px solid #fff; box-shadow:0 3px 8px rgba(0,0,0,.15);
+}
+.avatar img { width:100%; height:100%; object-fit:cover; }
+.avatar.small { width:46px; height:46px; font-size:26px; border-width:2px; }
+.profile-card .pname { font-size:clamp(19px,2.6vw,24px); color:#4a3b52; }
+.profile-card.add { background:#eaf6ff; justify-content:center; }
+.profile-card.add .avatar { background:#d3ecff; font-size:52px; color:#5aa9f7; }
+
+/* 아바타 만들기 */
+.avatar-options { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:420px; }
+.avatar-opt {
+  width:56px; height:56px; border-radius:50%; border:3px solid #fff; cursor:pointer;
+  font-size:32px; display:flex; align-items:center; justify-content:center; background:#ffe3ef;
+  box-shadow:0 2px 5px rgba(0,0,0,.2);
+}
+.avatar-opt.selected { border-color:#ff6f91; transform:scale(1.12); }
+.name-input {
+  font-family:inherit; font-size:26px; text-align:center; padding:10px 18px;
+  border:3px solid #ffd0dd; border-radius:16px; width:220px; color:#4a3b52;
+}
+.camera-view { width:280px; max-width:80vw; border-radius:20px; background:#000; display:block; transform:scaleX(-1); }
+
+/* 쓰기 화면 */
+.write-wrap { height:100%; display:flex; flex-direction:column; }
+.write-prompt { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px; }
+.write-emoji { font-size:clamp(42px,8vh,64px); line-height:1; }
+.write-word { display:flex; gap:6px; align-items:center; }
+.write-word .wchar {
+  font-size:clamp(30px,5vh,44px); font-weight:bold; color:#d8c4e0; padding:0 2px;
+  border-bottom:4px solid transparent;
+}
+.write-word .wchar.done { color:#4a3b52; }
+.write-word .wchar.current { color:#ff6f91; border-bottom-color:#ff6f91; }
+.write-canvas-holder {
+  flex:1; position:relative; margin:6px auto; width:min(92vw,440px); aspect-ratio:1/1; max-height:52vh;
+  background:#fff; border-radius:22px; box-shadow:0 4px 14px rgba(0,0,0,.14);
+}
+.write-canvas-holder canvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; }
+.write-tools { display:flex; gap:10px; justify-content:center; padding:8px; flex-wrap:wrap; }
+
+.fruit-basket { display:flex; gap:6px; align-items:center; font-size:clamp(15px,2.2vw,20px); }
+.fruit-basket span { white-space:nowrap; }
+
+/* 달력 기록 */
+.calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; max-width:420px; width:100%; }
+.cal-cell {
+  aspect-ratio:1/1; border-radius:10px; background:#f0eef5; display:flex;
+  flex-direction:column; align-items:center; justify-content:center; font-size:12px; color:#8a7d95;
+}
+.cal-cell.has { background:#ffe3a0; color:#7a5a10; }
+.cal-cell .cal-stamp { font-size:16px; }
+.cal-head { font-size:13px; color:#8a7d95; text-align:center; }
+
 /* ---------- Particles / effects ---------- */
 .fx {
   position:absolute;
