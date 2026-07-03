@@ -204,6 +204,155 @@ const ColoringTemplates = (() => {
       details: `
         <circle cx="56" cy="72" r="4" fill="#333"/>`,
     },
+
+    starFairy: {
+      name: '별 요정', emoji: '⭐', habitat: 'fly',
+      regions: [
+        { id: 'wingL', tag: 'path', attrs: { d: 'M62 90 L12 64 L36 98 L18 120 L62 116 Z' } },
+        { id: 'wingR', tag: 'path', attrs: { d: 'M138 90 L188 64 L164 98 L182 120 L138 116 Z' } },
+        { id: 'dress', tag: 'path', attrs: { d: 'M84 140 Q100 132 116 140 L122 170 Q100 180 78 170 Z' } },
+        { id: 'footL', tag: 'circle', attrs: { cx: 88, cy: 178, r: 7 } },
+        { id: 'footR', tag: 'circle', attrs: { cx: 112, cy: 178, r: 7 } },
+        { id: 'head', tag: 'circle', attrs: { cx: 100, cy: 92, r: 52 } },
+        { id: 'face', tag: 'circle', attrs: { cx: 100, cy: 100, r: 36 } },
+        { id: 'cheekL', tag: 'circle', attrs: { cx: 78, cy: 110, r: 7 } },
+        { id: 'cheekR', tag: 'circle', attrs: { cx: 122, cy: 110, r: 7 } },
+        { id: 'star', tag: 'path', attrs: { d: 'M100 2 L103.8 11.7 L114.3 12.4 L106.2 19 L108.8 29.1 L100 23.5 L91.2 29.1 L93.8 19 L85.7 12.4 L96.2 11.7 Z' } },
+      ],
+      details: `
+        <path d="M100 32 L100 42" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="86" cy="96" r="7" fill="#333"/>
+        <circle cx="114" cy="96" r="7" fill="#333"/>
+        <circle cx="88.5" cy="93" r="2.5" fill="#fff"/>
+        <circle cx="116.5" cy="93" r="2.5" fill="#fff"/>
+        <path d="M92 116 Q100 124 108 116" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>`,
+    },
+
+    ribbonFairy: {
+      name: '리본 요정', emoji: '🎀', habitat: 'fly',
+      regions: [
+        { id: 'wingL', tag: 'path', attrs: { d: 'M62 92 Q14 60 18 100 Q22 132 62 114 Z' } },
+        { id: 'wingR', tag: 'path', attrs: { d: 'M138 92 Q186 60 182 100 Q178 132 138 114 Z' } },
+        { id: 'dress', tag: 'path', attrs: { d: 'M84 140 Q100 132 116 140 L122 170 Q100 180 78 170 Z' } },
+        { id: 'footL', tag: 'circle', attrs: { cx: 88, cy: 178, r: 7 } },
+        { id: 'footR', tag: 'circle', attrs: { cx: 112, cy: 178, r: 7 } },
+        { id: 'head', tag: 'circle', attrs: { cx: 100, cy: 92, r: 52 } },
+        { id: 'face', tag: 'circle', attrs: { cx: 100, cy: 100, r: 36 } },
+        { id: 'cheekL', tag: 'circle', attrs: { cx: 78, cy: 110, r: 7 } },
+        { id: 'cheekR', tag: 'circle', attrs: { cx: 122, cy: 110, r: 7 } },
+        { id: 'ribbon', tag: 'path', attrs: { d: 'M100 24 L76 8 Q69 22 76 36 L100 24 L124 8 Q131 22 124 36 Z' } },
+        { id: 'ribbonKnot', tag: 'circle', attrs: { cx: 100, cy: 23, r: 6 } },
+      ],
+      details: `
+        <path d="M100 30 L100 42" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="86" cy="96" r="7" fill="#333"/>
+        <circle cx="114" cy="96" r="7" fill="#333"/>
+        <circle cx="88.5" cy="93" r="2.5" fill="#fff"/>
+        <circle cx="116.5" cy="93" r="2.5" fill="#fff"/>
+        <path d="M92 116 Q100 124 108 116" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>`,
+    },
+
+    flowerFairy: {
+      name: '꽃 요정', emoji: '🌷', habitat: 'fly',
+      regions: [
+        { id: 'wingL', tag: 'path', attrs: { d: 'M62 92 Q14 60 18 100 Q22 132 62 114 Z' } },
+        { id: 'wingR', tag: 'path', attrs: { d: 'M138 92 Q186 60 182 100 Q178 132 138 114 Z' } },
+        { id: 'dress', tag: 'path', attrs: { d: 'M84 140 Q100 132 116 140 L122 170 Q100 180 78 170 Z' } },
+        { id: 'footL', tag: 'circle', attrs: { cx: 88, cy: 178, r: 7 } },
+        { id: 'footR', tag: 'circle', attrs: { cx: 112, cy: 178, r: 7 } },
+        { id: 'head', tag: 'circle', attrs: { cx: 100, cy: 92, r: 52 } },
+        { id: 'face', tag: 'circle', attrs: { cx: 100, cy: 100, r: 36 } },
+        { id: 'cheekL', tag: 'circle', attrs: { cx: 78, cy: 110, r: 7 } },
+        { id: 'cheekR', tag: 'circle', attrs: { cx: 122, cy: 110, r: 7 } },
+        { id: 'tulip', tag: 'path', attrs: { d: 'M86 4 Q84 26 100 32 Q116 26 114 4 Q107 14 100 4 Q93 14 86 4 Z' } },
+      ],
+      details: `
+        <path d="M100 32 L100 42" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="86" cy="96" r="7" fill="#333"/>
+        <circle cx="114" cy="96" r="7" fill="#333"/>
+        <circle cx="88.5" cy="93" r="2.5" fill="#fff"/>
+        <circle cx="116.5" cy="93" r="2.5" fill="#fff"/>
+        <path d="M92 116 Q100 124 108 116" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>`,
+    },
+
+    snowPrincess: {
+      name: '눈의 공주', emoji: '❄️', habitat: 'walk',
+      regions: [
+        { id: 'hair', tag: 'path', attrs: { d: 'M100 16 Q56 20 52 64 Q50 96 64 112 L136 112 Q150 96 148 64 Q144 20 100 16 Z' } },
+        { id: 'braid', tag: 'path', attrs: { d: 'M134 98 Q152 128 146 164 Q138 178 128 164 Q136 132 122 106 Z' } },
+        { id: 'face', tag: 'circle', attrs: { cx: 100, cy: 64, r: 30 } },
+        { id: 'tiara', tag: 'path', attrs: { d: 'M82 28 Q100 12 118 28 L114 38 Q100 28 86 38 Z' } },
+        { id: 'skirt', tag: 'path', attrs: { d: 'M86 106 L50 188 Q100 204 150 188 L114 106 Z' } },
+        { id: 'sleeveL', tag: 'circle', attrs: { cx: 80, cy: 112, r: 9 } },
+        { id: 'sleeveR', tag: 'circle', attrs: { cx: 120, cy: 112, r: 9 } },
+        { id: 'bodice', tag: 'path', attrs: { d: 'M86 104 Q100 96 114 104 L110 132 Q100 138 90 132 Z' } },
+        { id: 'cheekL', tag: 'circle', attrs: { cx: 82, cy: 74, r: 5 } },
+        { id: 'cheekR', tag: 'circle', attrs: { cx: 118, cy: 74, r: 5 } },
+      ],
+      details: `
+        <circle cx="90" cy="60" r="4" fill="#333"/>
+        <circle cx="110" cy="60" r="4" fill="#333"/>
+        <path d="M92 76 Q100 82 108 76" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+        <g stroke="#333" stroke-width="2" stroke-linecap="round" opacity=".8">
+          <path d="M100 152 L100 172 M91 157 L109 167 M109 157 L91 167"/>
+        </g>`,
+    },
+
+    bird: {
+      name: '아기 새', emoji: '🐦', habitat: 'fly',
+      regions: [
+        { id: 'tail', tag: 'path', attrs: { d: 'M148 106 L190 90 L184 112 L192 128 L150 122 Z' } },
+        { id: 'body', tag: 'ellipse', attrs: { cx: 102, cy: 110, rx: 50, ry: 38 } },
+        { id: 'belly', tag: 'ellipse', attrs: { cx: 92, cy: 124, rx: 26, ry: 20 } },
+        { id: 'wing', tag: 'ellipse', attrs: { cx: 116, cy: 100, rx: 28, ry: 15, transform: 'rotate(-22 116 100)' } },
+        { id: 'tuft', tag: 'path', attrs: { d: 'M74 54 Q66 34 82 26 Q80 42 92 50 Z' } },
+        { id: 'beak', tag: 'path', attrs: { d: 'M52 70 L26 80 L52 90 Z' } },
+        { id: 'head', tag: 'circle', attrs: { cx: 74, cy: 76, r: 27 } },
+      ],
+      details: `
+        <circle cx="66" cy="70" r="4.5" fill="#333"/>
+        <path d="M56 84 Q62 88 68 85" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>`,
+    },
+
+    bee: {
+      name: '꿀벌', emoji: '🐝', habitat: 'fly',
+      regions: [
+        { id: 'wingL', tag: 'ellipse', attrs: { cx: 86, cy: 46, rx: 17, ry: 27, transform: 'rotate(-22 86 46)' } },
+        { id: 'wingR', tag: 'ellipse', attrs: { cx: 124, cy: 46, rx: 17, ry: 27, transform: 'rotate(22 124 46)' } },
+        { id: 'stinger', tag: 'path', attrs: { d: 'M150 108 L178 102 L156 124 Z' } },
+        { id: 'body', tag: 'ellipse', attrs: { cx: 104, cy: 110, rx: 52, ry: 38 } },
+        { id: 'stripe1', tag: 'ellipse', attrs: { cx: 96, cy: 110, rx: 10, ry: 37 } },
+        { id: 'stripe2', tag: 'ellipse', attrs: { cx: 124, cy: 110, rx: 9, ry: 33 } },
+        { id: 'head', tag: 'circle', attrs: { cx: 54, cy: 96, r: 25 } },
+      ],
+      details: `
+        <path d="M46 74 Q38 58 26 54 M60 73 Q60 54 72 46" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="26" cy="54" r="3.5" fill="#333"/>
+        <circle cx="72" cy="46" r="3.5" fill="#333"/>
+        <circle cx="48" cy="90" r="4.5" fill="#333"/>
+        <path d="M40 104 Q48 110 56 106" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>`,
+    },
+
+    dragon: {
+      name: '아기 드래곤', emoji: '🐲', habitat: 'fly',
+      regions: [
+        { id: 'tail', tag: 'path', attrs: { d: 'M154 126 Q192 114 188 84 Q186 72 172 76 Q176 96 146 108 Z' } },
+        { id: 'tailTip', tag: 'path', attrs: { d: 'M182 72 L198 78 L186 92 Z' } },
+        { id: 'wing', tag: 'path', attrs: { d: 'M104 82 Q96 28 56 32 Q76 46 72 62 Q86 58 84 78 Q96 74 104 92 Z' } },
+        { id: 'legL', tag: 'rect', attrs: { x: 84, y: 154, width: 20, height: 36, rx: 9 } },
+        { id: 'legR', tag: 'rect', attrs: { x: 124, y: 154, width: 20, height: 36, rx: 9 } },
+        { id: 'body', tag: 'ellipse', attrs: { cx: 112, cy: 134, rx: 50, ry: 36 } },
+        { id: 'belly', tag: 'ellipse', attrs: { cx: 104, cy: 146, rx: 28, ry: 20 } },
+        { id: 'hornL', tag: 'path', attrs: { d: 'M64 62 L52 40 L76 54 Z' } },
+        { id: 'hornR', tag: 'path', attrs: { d: 'M88 58 L96 36 L74 52 Z' } },
+        { id: 'head', tag: 'circle', attrs: { cx: 74, cy: 84, r: 30 } },
+        { id: 'cheek', tag: 'circle', attrs: { cx: 56, cy: 96, r: 6 } },
+      ],
+      details: `
+        <circle cx="66" cy="78" r="4.5" fill="#333"/>
+        <circle cx="50" cy="84" r="2" fill="#333"/>
+        <path d="M56 106 Q66 112 76 107" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>`,
+    },
   };
 
   // 색칠용 팔레트
@@ -212,16 +361,42 @@ const ColoringTemplates = (() => {
     '#f06292', '#a1887f', '#4a3b52', '#9e9e9e', '#66bb6a', '#ffab91', '#ffffff',
   ];
 
-  // 템플릿 + 색 정보로 SVG 문자열 생성
-  function buildSVG(tplId, colors) {
+  // 질감 패턴 (흰/검 반투명이라 어떤 색 위에서도 어울림)
+  const TEXTURE_DEFS = `<defs>
+    <pattern id="tex-brush" width="14" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
+      <path d="M0 2 H14" stroke="#fff" stroke-opacity=".32" stroke-width="2.2"/>
+      <path d="M0 6.5 H14" stroke="#000" stroke-opacity=".10" stroke-width="1.6"/>
+    </pattern>
+    <pattern id="tex-crayon" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+      <path d="M0 1.2 H7" stroke="#fff" stroke-opacity=".42" stroke-width="1.5" stroke-dasharray="3 1.5"/>
+      <path d="M0 4.8 H7" stroke="#000" stroke-opacity=".10" stroke-width="1.2" stroke-dasharray="2 2"/>
+    </pattern>
+    <pattern id="tex-marker" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(90)">
+      <rect x="0" y="0" width="12" height="6" fill="#fff" opacity=".15"/>
+      <path d="M0 0 H12" stroke="#000" stroke-opacity=".08" stroke-width="1.2"/>
+    </pattern>
+  </defs>`;
+
+  // colors[id]는 '#hex' (민무늬) 또는 {c:'#hex', t:'brush|crayon|marker'} (질감)
+  function parseFill(v) {
+    if (!v) return { color: '#ffffff', tex: null };
+    if (typeof v === 'string') return { color: v, tex: null };
+    return { color: v.c || '#ffffff', tex: v.t || null };
+  }
+
+  // 템플릿 + 색 정보로 SVG 문자열 생성 (editable이면 모든 영역에 질감 오버레이 슬롯 생성)
+  function buildSVG(tplId, colors, opts = {}) {
     const t = templates[tplId];
     if (!t) return '';
-    let s = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">`;
+    let s = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">` + TEXTURE_DEFS;
     for (const r of t.regions) {
-      const fill = (colors && colors[r.id]) || '#ffffff';
+      const { color, tex } = parseFill(colors && colors[r.id]);
       const attrs = Object.entries(r.attrs)
         .map(([k, v]) => `${k}="${v}"`).join(' ');
-      s += `<${r.tag} ${attrs} fill="${fill}" stroke="#333" stroke-width="3.5" stroke-linejoin="round" data-region="${r.id}"/>`;
+      s += `<${r.tag} ${attrs} fill="${color}" stroke="#333" stroke-width="3.5" stroke-linejoin="round" data-region="${r.id}"/>`;
+      if (tex || opts.editable) {
+        s += `<${r.tag} ${attrs} fill="${tex ? `url(#tex-${tex})` : 'none'}" stroke="none" pointer-events="none" data-tex-for="${r.id}"/>`;
+      }
     }
     s += t.details + '</svg>';
     return s;

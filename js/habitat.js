@@ -129,8 +129,10 @@ GameShell.registerGame({
         let x = cr.x, y, flip = false, rot = 0;
 
         if (cr.behavior === 'walk') {
+          // 연못은 밟지 않고 오른쪽 풀밭에서만 걸어요
+          const minX = pond.offsetLeft + pond.offsetWidth + 6;
           cr.x += cr.dir * cr.speed;
-          if (cr.x < 20) { cr.x = 20; cr.dir = 1; }
+          if (cr.x < minX) { cr.x = minX; cr.dir = 1; }
           if (cr.x > sceneW - cr.size - 20) { cr.x = sceneW - cr.size - 20; cr.dir = -1; }
           // 가끔 방향 바꾸기
           if (Math.random() < 0.002) cr.dir *= -1;

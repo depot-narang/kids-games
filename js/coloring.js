@@ -27,14 +27,21 @@ GameShell.registerGame({
 
     function showColoring(tplId) {
       const tpl = ColoringTemplates.templates[tplId];
-      const colors = {}; // regionId -> color
+      const colors = {}; // regionId -> '#hex' 또는 {c, t}
       let selected = ColoringTemplates.PALETTE[0];
+      let texture = null; // null(페인트) | brush | crayon | marker
 
       body.innerHTML = `
         <div class="coloring-wrap">
           <div class="coloring-main">
-            <div class="coloring-svg-holder">${ColoringTemplates.buildSVG(tplId, null)}</div>
+            <div class="coloring-svg-holder">${ColoringTemplates.buildSVG(tplId, null, { editable: true })}</div>
             <div class="coloring-side">
+              <div class="texture-tools" style="display:flex;gap:8px;">
+                <button class="tool-btn tex-btn selected" data-tex="" title="페인트">🪣</button>
+                <button class="tool-btn tex-btn" data-tex="brush" title="붓">🖌️</button>
+                <button class="tool-btn tex-btn" data-tex="crayon" title="크레용">🖍️</button>
+                <button class="tool-btn tex-btn" data-tex="marker" title="마커">🖊️</button>
+              </div>
               <div class="coloring-palette"></div>
               <button class="btn reset-btn">🔄 처음부터</button>
               <button class="btn big primary done-btn">✨ 완성!</button>
@@ -44,6 +51,15 @@ GameShell.registerGame({
 
       const svg = body.querySelector('svg');
       const palette = body.querySelector('.coloring-palette');
+
+      body.querySelectorAll('.tex-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          texture = btn.dataset.tex || null;
+          body.querySelectorAll('.tex-btn').forEach((b) => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          Sound.blip();
+        });
+      });
 
       ColoringTemplates.PALETTE.forEach((c, i) => {
         const dot = document.createElement('button');
@@ -63,15 +79,19 @@ GameShell.registerGame({
         el.addEventListener('pointerdown', (e) => {
           e.preventDefault();
           const id = el.getAttribute('data-region');
+          const overlay = svg.querySelector(`[data-tex-for="${id}"]`);
           el.setAttribute('fill', selected);
-          if (selected === '#ffffff') delete colors[id];
-          else colors[id] = selected;
+          const isErase = selected === '#ffffff' && !texture;
+          if (overlay) overlay.setAttribute('fill', !isErase && texture ? `url(#tex-${texture})` : 'none');
+          if (isErase) delete colors[id];
+          else colors[id] = texture ? { c: selected, t: texture } : selected;
           Sound.pop();
         });
       });
 
       body.querySelector('.reset-btn').addEventListener('click', () => {
         svg.querySelectorAll('[data-region]').forEach((el) => el.setAttribute('fill', '#ffffff'));
+        svg.querySelectorAll('[data-tex-for]').forEach((el) => el.setAttribute('fill', 'none'));
         Object.keys(colors).forEach((k) => delete colors[k]);
         Sound.buzz();
       });

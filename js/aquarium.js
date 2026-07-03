@@ -1,4 +1,4 @@
-// 🐠 아기 물고기 — 터치하면 먹이가 떨어지고, 먹이를 주면 물고기 가족이 늘어나요
+// 🐠 아기 물고기 — 먹이 주고 키우는 내 어항. 물고기를 만지면 재롱을 부려요!
 GameShell.registerGame({
   id: 'aquarium',
   name: '아기 물고기',
@@ -7,9 +7,11 @@ GameShell.registerGame({
   color: '#bfe9ff',
 
   init(body) {
-    const FISH_TYPES = ['🐠', '🐟', '🐡', '🦐', '🐙', '🦈'];
-    const FEEDS_PER_NEW_FISH = 8;
-    const MAX_FISH = 12;
+    const FISH_TYPES = ['🐠', '🐟', '🐡', '🦐', '🐙', '🦈', '🐢', '🦀', '🪼', '🐬'];
+    const MAX_FISH = 30;
+    const TRICKS = ['spin', 'loop', 'wiggle', 'hearts'];
+    // 물고기가 늘어날수록 새 친구 조건이 조금씩 어려워져요
+    const neededFor = (count) => 6 + Math.max(0, count - 3) * 4;
 
     body.innerHTML = `
       <canvas class="fill"></canvas>
@@ -25,48 +27,77 @@ GameShell.registerGame({
     const onResize = () => { ({ w, h, ctx } = fitCanvas(canvas)); };
     window.addEventListener('resize', onResize);
 
-    // 저장된 어항 불러오기
+    // 저장된 어항 불러오기 (예전 저장분과 호환)
     const saved = Store.get('aquarium', null) || {
       fish: [{ type: '🐠', size: 1 }, { type: '🐟', size: 1 }, { type: '🐡', size: 1 }],
       feedCount: 0,
     };
+    let feedCount = saved.feedCount || 0;
+    let toNext = saved.toNext != null ? saved.toNext : 0;
 
     const fish = saved.fish.map((f) => ({
       type: f.type,
       size: f.size,
       x: randBetween(60, 400), y: randBetween(80, 300),
-      vx: 0, vy: 0,
-      tx: 0, ty: 0,
+      vx: 0, vy: 0, tx: 0, ty: 0,
       pauseUntil: 0,
+      trick: null,
+      nextTrickAt: performance.now() + randBetween(4000, 15000),
     }));
-    let feedCount = saved.feedCount;
     let foods = [];
     let bubbles = [];
+    let emotes = []; // 떠오르는 하트/음표 이펙트
     let raf = null;
     let running = true;
 
     function save() {
-      Store.set('aquarium', { fish: fish.map((f) => ({ type: f.type, size: f.size })), feedCount });
+      Store.set('aquarium', { fish: fish.map((f) => ({ type: f.type, size: f.size })), feedCount, toNext });
     }
 
     function updateHud() {
       fishPill.textContent = `🐠 물고기 ${fish.length}마리`;
-      const left = FEEDS_PER_NEW_FISH - (feedCount % FEEDS_PER_NEW_FISH);
-      feedPill.textContent = fish.length >= MAX_FISH ? '어항이 가득해요! 💕' : `🍒 먹이 ${left}번 주면 새 친구!`;
+      feedPill.textContent = fish.length >= MAX_FISH
+        ? '와! 바다처럼 가득해요 🌊'
+        : `🍒 새 친구까지 먹이 ${neededFor(fish.length) - toNext}번!`;
     }
     updateHud();
 
     function newTarget(f) {
-      f.tx = randBetween(50, w - 50);
-      f.ty = randBetween(60, h - 60);
+      f.tx = randBetween(50, Math.max(60, w - 50));
+      f.ty = randBetween(60, Math.max(70, h - 60));
     }
     fish.forEach((f) => { f.x = randBetween(50, Math.max(60, w - 50)); f.y = randBetween(60, Math.max(70, h - 60)); newTarget(f); });
+
+    function emote(x, y, char) {
+      emotes.push({ x, y, vy: randBetween(-1.2, -0.7), life: 1, char });
+    }
+
+    function startTrick(f, now, type) {
+      f.trick = {
+        type: type || randPick(TRICKS),
+        start: now,
+        dur: { spin: 1200, loop: 1600, wiggle: 900, hearts: 1000 }[type] || 1200,
+        lastHeart: 0,
+      };
+      if (!f.trick.dur) f.trick.dur = 1200;
+      f.nextTrickAt = now + randBetween(9000, 22000);
+    }
 
     canvas.addEventListener('pointerdown', (e) => {
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      // 먹이 3알 떨어뜨리기
+
+      // 물고기를 만졌으면 재롱 부리기
+      for (const f of fish) {
+        if (Math.hypot(f.x - x, f.y - y) < 36 * f.size) {
+          startTrick(f, performance.now(), randPick(TRICKS));
+          Sound.heart();
+          emote(f.x, f.y - 24, '💗');
+          return;
+        }
+      }
+      // 아니면 먹이 3알 떨어뜨리기
       for (let i = 0; i < 3; i++) {
         foods.push({ x: x + randBetween(-16, 16), y: Math.min(y, 40) + randBetween(-8, 8), vy: randBetween(0.5, 1), landed: false, born: Date.now() });
       }
@@ -76,13 +107,17 @@ GameShell.registerGame({
     function eatFood(f, food, fi) {
       foods.splice(fi, 1);
       feedCount++;
+      toNext++;
       f.size = Math.min(1.6, f.size + 0.015);
       Sound.pop();
-      spawnFx(body, food.x, food.y, '💕');
-      if (feedCount % FEEDS_PER_NEW_FISH === 0 && fish.length < MAX_FISH) {
+      emote(food.x, food.y, '💕');
+
+      if (toNext >= neededFor(fish.length) && fish.length < MAX_FISH) {
+        toNext = 0;
         const nf = {
           type: randPick(FISH_TYPES), size: 0.8,
           x: w / 2, y: -30, vx: 0, vy: 0, tx: 0, ty: 0, pauseUntil: 0,
+          trick: null, nextTrickAt: performance.now() + randBetween(4000, 12000),
         };
         newTarget(nf);
         fish.push(nf);
@@ -94,6 +129,8 @@ GameShell.registerGame({
       updateHud();
       save();
     }
+
+    let kissCooldown = 0;
 
     function frame(now) {
       if (!running) return;
@@ -164,6 +201,9 @@ GameShell.registerGame({
           targetX = foods[bestIdx].x; targetY = foods[bestIdx].y; chasing = true;
         }
 
+        // 한가할 때 가끔 스스로 재롱 부리기
+        if (!f.trick && !chasing && now > f.nextTrickAt) startTrick(f, now);
+
         if (now > f.pauseUntil) {
           const dx = targetX - f.x, dy = targetY - f.y;
           const dist = Math.hypot(dx, dy) || 1;
@@ -183,9 +223,33 @@ GameShell.registerGame({
         f.x = Math.max(30, Math.min(w - 30, f.x));
         f.y = Math.max(40, Math.min(h - 36, f.y));
 
+        // 재롱 상태 계산
+        let rot = 0, ox = 0, oy = 0;
+        if (f.trick) {
+          const p = (now - f.trick.start) / f.trick.dur;
+          if (p >= 1) {
+            f.trick = null;
+          } else if (f.trick.type === 'spin') {
+            rot = p * Math.PI * 4; // 두 바퀴 빙글빙글
+          } else if (f.trick.type === 'loop') {
+            const th = p * Math.PI * 2; // 공중제비 한 바퀴
+            ox = Math.sin(th) * 30;
+            oy = -(1 - Math.cos(th)) * 30;
+            rot = Math.sin(th) * 0.5;
+          } else if (f.trick.type === 'wiggle') {
+            rot = Math.sin(p * Math.PI * 8) * 0.4; // 신나는 몸흔들기
+          } else if (f.trick.type === 'hearts') {
+            if (now - f.trick.lastHeart > 220) {
+              f.trick.lastHeart = now;
+              emote(f.x + randBetween(-10, 10), f.y - 26, randPick(['💗', '🎵', '✨']));
+            }
+          }
+        }
+
         // 그리기 (이모지 물고기는 왼쪽을 봐서, 오른쪽으로 갈 땐 뒤집기)
         ctx.save();
-        ctx.translate(f.x, f.y + Math.sin(now / 600 + f.tx) * 3);
+        ctx.translate(f.x + ox, f.y + oy + Math.sin(now / 600 + f.tx) * 3);
+        if (rot) ctx.rotate(rot);
         const fontSize = 40 * f.size;
         if (f.vx > 0.1) ctx.scale(-1, 1);
         ctx.font = `${fontSize}px serif`;
@@ -193,6 +257,29 @@ GameShell.registerGame({
         ctx.textBaseline = 'middle';
         ctx.fillText(f.type, 0, 0);
         ctx.restore();
+      }
+
+      // 가까이 지나가는 물고기끼리 뽀뽀 💕
+      if (now > kissCooldown && fish.length >= 2 && Math.random() < 0.02) {
+        const a = randPick(fish), b = randPick(fish);
+        if (a !== b && Math.hypot(a.x - b.x, a.y - b.y) < 55) {
+          emote((a.x + b.x) / 2, (a.y + b.y) / 2 - 14, '💕');
+          kissCooldown = now + 2500;
+        }
+      }
+
+      // 이펙트 (하트, 음표)
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let i = emotes.length - 1; i >= 0; i--) {
+        const m = emotes[i];
+        m.y += m.vy;
+        m.life -= 0.016;
+        if (m.life <= 0) { emotes.splice(i, 1); continue; }
+        ctx.globalAlpha = Math.min(1, m.life * 1.5);
+        ctx.font = '22px serif';
+        ctx.fillText(m.char, m.x, m.y);
+        ctx.globalAlpha = 1;
       }
 
       raf = requestAnimationFrame(frame);

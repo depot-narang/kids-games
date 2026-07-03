@@ -8,6 +8,12 @@ GameShell.registerGame({
 
   init(body) {
     const GAME_SECONDS = 30;
+    // stay: 두더지가 나와있는 시간, gap: 다음 두더지까지 간격 (ms)
+    const SPEEDS = [
+      { id: 'slow', label: '🐢 느긋느긋', stayMin: 1500, stayMax: 2200, gapMin: 700, gapMax: 1200 },
+      { id: 'normal', label: '🐰 보통', stayMin: 1000, stayMax: 1500, gapMin: 500, gapMax: 900 },
+      { id: 'fast', label: '🚀 빠름!', stayMin: 600, stayMax: 950, gapMin: 320, gapMax: 620 },
+    ];
     let timeouts = [];
     let interval = null;
     let running = false;
@@ -29,8 +35,24 @@ GameShell.registerGame({
             <button class="btn big primary two-btn">🍓 vs 🍇 둘이 대결!</button>
           </div>
         </div>`;
-      body.querySelector('.one-btn').addEventListener('click', () => { Sound.ding(); startGame(1); });
-      body.querySelector('.two-btn').addEventListener('click', () => { Sound.ding(); startGame(2); });
+      body.querySelector('.one-btn').addEventListener('click', () => { Sound.ding(); showSpeedSelect(1); });
+      body.querySelector('.two-btn').addEventListener('click', () => { Sound.ding(); showSpeedSelect(2); });
+    }
+
+    function showSpeedSelect(players) {
+      body.innerHTML = `
+        <div class="song-select">
+          <h3>두더지가 얼마나 빠르게 나올까요?</h3>
+          <div class="overlay-buttons speed-buttons"></div>
+        </div>`;
+      const holder = body.querySelector('.speed-buttons');
+      SPEEDS.forEach((sp) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn big primary';
+        btn.textContent = sp.label;
+        btn.addEventListener('click', () => { Sound.ding(); startGame(players, sp); });
+        holder.appendChild(btn);
+      });
     }
 
     function makeBoard(rows, cols, label) {
@@ -76,7 +98,7 @@ GameShell.registerGame({
       return board;
     }
 
-    function popLoop(board, endTime) {
+    function popLoop(board, endTime, speed) {
       if (!running) return;
       const now = Date.now();
       if (now >= endTime) return;
@@ -88,15 +110,14 @@ GameShell.registerGame({
         h.mole.textContent = h.golden ? '👑🐹' : '🐹';
         h.mole.classList.add('up');
         Sound.blip();
-        const stayMs = randBetween(650, 1100) * Math.max(0.55, (endTime - now) / (GAME_SECONDS * 1000) * 0.6 + 0.4);
         later(() => {
           if (h.up) { h.up = false; h.mole.classList.remove('up'); }
-        }, stayMs);
+        }, randBetween(speed.stayMin, speed.stayMax));
       }
-      later(() => popLoop(board, endTime), randBetween(380, 750));
+      later(() => popLoop(board, endTime, speed), randBetween(speed.gapMin, speed.gapMax));
     }
 
-    function startGame(players) {
+    function startGame(players, speed) {
       stopAll();
       running = true;
       body.innerHTML = `
@@ -113,26 +134,27 @@ GameShell.registerGame({
       boards.forEach((b) => boardsHolder.appendChild(b.el));
 
       const endTime = Date.now() + GAME_SECONDS * 1000;
-      boards.forEach((b) => later(() => popLoop(b, endTime), randBetween(300, 800)));
+      boards.forEach((b) => later(() => popLoop(b, endTime, speed), randBetween(300, 800)));
 
       interval = setInterval(() => {
         const left = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
         timePill.textContent = `⏰ ${left}`;
         if (left <= 0) {
           clearInterval(interval); interval = null;
-          finish(players, boards);
+          finish(players, boards, speed);
         }
       }, 250);
     }
 
-    function finish(players, boards) {
+    function finish(players, boards, speed) {
       running = false;
       Sound.fanfare();
       let title, msg;
       if (players === 1) {
-        const best = Store.get('mole.best', 0);
+        const bestKey = 'mole.best.' + speed.id;
+        const best = Store.get(bestKey, 0);
         const score = boards[0].score;
-        if (score > best) Store.set('mole.best', score);
+        if (score > best) Store.set(bestKey, score);
         title = '🎉 끝!';
         msg = `${score}점! ${score > best ? '최고 기록이에요! 🏆' : `최고 기록: ${Math.max(best, score)}점`}`;
       } else {
@@ -152,7 +174,7 @@ GameShell.registerGame({
           </div>
         </div>`;
       body.appendChild(overlay);
-      overlay.querySelector('.again-btn').addEventListener('click', () => { Sound.ding(); startGame(players); });
+      overlay.querySelector('.again-btn').addEventListener('click', () => { Sound.ding(); startGame(players, speed); });
       overlay.querySelector('.mode-btn').addEventListener('click', () => { Sound.ding(); showModeSelect(); });
     }
 

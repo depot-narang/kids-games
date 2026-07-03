@@ -18,10 +18,12 @@ GameShell.registerGame({
           <button class="tool-btn size-btn selected" data-size="14" style="font-size:28px">•</button>
           <button class="tool-btn size-btn" data-size="28" style="font-size:40px">•</button>
           <span class="toolbar-gap"></span>
-          <button class="tool-btn brush-btn selected" title="붓">🖌️</button>
-          <button class="tool-btn rainbow-btn" title="무지개">🌈</button>
-          <button class="tool-btn splat-btn" title="물감 뿌리기">💦</button>
-          <button class="tool-btn eraser-btn" title="지우개">🧽</button>
+          <button class="tool-btn tool-select selected" data-tool="brush" title="붓">🖌️</button>
+          <button class="tool-btn tool-select" data-tool="crayon" title="크레용">🖍️</button>
+          <button class="tool-btn tool-select" data-tool="marker" title="마커">🖊️</button>
+          <button class="tool-btn tool-select" data-tool="rainbow" title="무지개">🌈</button>
+          <button class="tool-btn tool-select" data-tool="splat" title="물감 뿌리기">💦</button>
+          <button class="tool-btn tool-select" data-tool="eraser" title="지우개">🧽</button>
           <span class="toolbar-gap"></span>
           <button class="tool-btn clear-btn" title="다 지우기">🗑️</button>
           <button class="tool-btn save-btn" title="저장">💾</button>
@@ -52,7 +54,7 @@ GameShell.registerGame({
 
     let color = COLORS[0];
     let size = 14;
-    let tool = 'brush'; // brush | rainbow | splat | eraser
+    let tool = 'brush'; // brush | crayon | marker | rainbow | splat | eraser
     let hue = 0;
     const pointers = new Map(); // pointerId -> {x, y}
 
@@ -78,13 +80,12 @@ GameShell.registerGame({
 
     function selectTool(t) {
       tool = t;
-      body.querySelectorAll('.brush-btn,.rainbow-btn,.splat-btn,.eraser-btn').forEach((b) => b.classList.remove('selected'));
-      body.querySelector(`.${t === 'brush' ? 'brush' : t === 'rainbow' ? 'rainbow' : t === 'splat' ? 'splat' : 'eraser'}-btn`).classList.add('selected');
+      body.querySelectorAll('.tool-select').forEach((b) =>
+        b.classList.toggle('selected', b.dataset.tool === t));
     }
-    body.querySelector('.brush-btn').addEventListener('click', () => { selectTool('brush'); Sound.blip(); });
-    body.querySelector('.rainbow-btn').addEventListener('click', () => { selectTool('rainbow'); Sound.blip(); });
-    body.querySelector('.splat-btn').addEventListener('click', () => { selectTool('splat'); Sound.blip(); });
-    body.querySelector('.eraser-btn').addEventListener('click', () => { selectTool('eraser'); Sound.blip(); });
+    body.querySelectorAll('.tool-select').forEach((btn) => {
+      btn.addEventListener('click', () => { selectTool(btn.dataset.tool); Sound.blip(); });
+    });
 
     body.querySelectorAll('.size-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -145,28 +146,66 @@ GameShell.registerGame({
       Sound.pop();
     }
 
+    // 도구별 선 그리기
+    function drawSegment(a, b) {
+      const c = strokeColor();
+      if (tool === 'marker') {
+        // 반투명 넓은 선 — 겹치면 자연스럽게 진해짐
+        ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = c;
+        ctx.lineWidth = size * 1.9;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      } else if (tool === 'crayon') {
+        // 지글지글한 가는 선 여러 개 + 부스러기 점
+        ctx.strokeStyle = c;
+        for (let i = 0; i < 3; i++) {
+          const off = size * 0.35;
+          ctx.globalAlpha = randBetween(0.25, 0.6);
+          ctx.lineWidth = size * 0.4;
+          ctx.beginPath();
+          ctx.moveTo(a.x + randBetween(-off, off), a.y + randBetween(-off, off));
+          ctx.lineTo(b.x + randBetween(-off, off), b.y + randBetween(-off, off));
+          ctx.stroke();
+        }
+        ctx.fillStyle = c;
+        for (let i = 0; i < 2; i++) {
+          ctx.globalAlpha = randBetween(0.15, 0.4);
+          const t = Math.random();
+          ctx.beginPath();
+          ctx.arc(a.x + (b.x - a.x) * t + randBetween(-size, size) * 0.5,
+                  a.y + (b.y - a.y) * t + randBetween(-size, size) * 0.5,
+                  randBetween(0.6, size * 0.18), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.strokeStyle = c;
+        ctx.lineWidth = tool === 'eraser' ? size * 1.6 : size;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+
     canvas.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       const p = pos(e);
       if (tool === 'splat') { splat(p.x, p.y); return; }
       pointers.set(e.pointerId, p);
-      // 점 하나 찍기
-      ctx.fillStyle = strokeColor();
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, (tool === 'eraser' ? size * 1.6 : size) / 2, 0, Math.PI * 2);
-      ctx.fill();
+      // 점 하나 찍기 (미세하게 움직인 것처럼 처리해서 도구 질감 유지)
+      drawSegment(p, { x: p.x + 0.4, y: p.y + 0.4 });
     });
 
     canvas.addEventListener('pointermove', (e) => {
       const last = pointers.get(e.pointerId);
       if (!last) return;
       const p = pos(e);
-      ctx.strokeStyle = strokeColor();
-      ctx.lineWidth = tool === 'eraser' ? size * 1.6 : size;
-      ctx.beginPath();
-      ctx.moveTo(last.x, last.y);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
+      drawSegment(last, p);
       pointers.set(e.pointerId, p);
     });
 
