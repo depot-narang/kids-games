@@ -7,7 +7,7 @@
 <title>우리들의 게임나라</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <div id="app">
@@ -18,8 +18,8 @@
 </div>
 <script>
   // 파일 변경이 항상 반영되도록 버전 쿼리를 붙여 순서대로 로드
-  var V = 'v=4';
-  var FILES = ['audio','main','player','score','cartoon','templates','balloon','memory','paint','mole','rhythm','aquarium','coloring','habitat','hangul-data','hangul','garden'];
+  var V = 'v=5';
+  var FILES = ['audio','main','player','score','cartoon','templates','balloon','memory','paint','mole','rhythm','aquarium','coloring','habitat','frog','colormatch','counting','shadow','simon','hangul-data','hangul','garden'];
   (function load(i){
     if (i >= FILES.length) { GameShell.boot(); return; }
     var s = document.createElement('script');
