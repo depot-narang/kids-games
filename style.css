@@ -46,6 +46,57 @@ body {
 @media (max-width:720px), (orientation:portrait) {
   #home-grid { grid-template-columns:repeat(2, 1fr); }
 }
+.section-list { display:flex; align-items:center; justify-content:center; padding:16px; overflow-y:auto; }
+.section-list #home-grid { grid-template-columns:repeat(auto-fit, minmax(150px, 220px)); }
+
+/* 홈 3구역 + 친구 칩 */
+#section-grid {
+  display:grid; grid-template-columns:repeat(3, minmax(150px, 240px)); gap:18px; width:min(94vw, 800px);
+}
+@media (orientation:portrait) { #section-grid { grid-template-columns:1fr; } }
+.section-card { padding:26px 14px 20px; }
+.section-card .card-emoji { font-size:clamp(46px, 8vw, 72px); }
+.player-bar { display:flex; justify-content:center; }
+.player-chip {
+  display:flex; align-items:center; gap:10px;
+  border:none; border-radius:999px; background:#fff; cursor:pointer;
+  padding:8px 18px; font-family:inherit; font-size:clamp(17px,2.4vw,22px); color:#4a3b52;
+  box-shadow:0 4px 0 rgba(0,0,0,.12);
+}
+.player-chip:active { transform:scale(.96); }
+.player-chip.empty { color:#ff6f91; }
+.player-chip .avatar.small { width:38px; height:38px; font-size:22px; }
+.chip-fruit { background:#fff3d6; border-radius:999px; padding:3px 12px; font-size:.85em; }
+
+/* ---------- 내 정원 ---------- */
+.garden-wrap { height:100%; display:flex; flex-direction:column; }
+.garden-scene {
+  flex:1; position:relative; overflow:hidden;
+  background:linear-gradient(#9bd8ff 0%, #cfeeff 52%, #ffe9b3 56%, #a6e284 58%, #7cc95e 100%);
+}
+.garden-scene.delete-mode { outline:4px dashed #ff6f91; outline-offset:-6px; }
+.garden-sun { position:absolute; top:6%; right:7%; width:64px; height:64px; border-radius:50%; background:radial-gradient(#fff6b0,#ffd93b); box-shadow:0 0 34px 12px rgba(255,220,80,.5); }
+.garden-item {
+  position:absolute; transform:translate(-50%,-50%);
+  font-size:clamp(38px, 8vh, 68px); cursor:grab; touch-action:none; line-height:1;
+  filter:drop-shadow(0 4px 3px rgba(0,0,0,.22));
+}
+.garden-scene.delete-mode .garden-item { animation:wobble .4s ease-in-out infinite; }
+@keyframes wobble { 0%,100%{transform:translate(-50%,-50%) rotate(-5deg);} 50%{transform:translate(-50%,-50%) rotate(5deg);} }
+.garden-hint { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; }
+.garden-hint p { background:rgba(255,255,255,.85); padding:14px 22px; border-radius:20px; font-size:clamp(17px,2.4vw,22px); }
+.garden-shop { background:#fff7e6; box-shadow:0 -3px 10px rgba(0,0,0,.12); padding:8px 10px 12px; }
+.shop-title { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:2px 6px 8px; }
+.trash-toggle.on { background:#ffd0dd; }
+.shop-items { display:flex; gap:8px; overflow-x:auto; padding:2px 2px 6px; }
+.shop-item {
+  flex:0 0 auto; border:none; background:#fff; border-radius:16px; cursor:pointer;
+  width:64px; height:72px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  box-shadow:0 3px 0 rgba(0,0,0,.12); font-family:inherit;
+}
+.shop-item:active { transform:scale(.92); }
+.shop-emoji { font-size:34px; line-height:1; }
+.shop-cost { font-size:13px; color:#c08a2a; }
 .home-card {
   border:none;
   border-radius:26px;

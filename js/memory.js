@@ -95,6 +95,7 @@ GameShell.registerGame({
 
     function finish(tries) {
       Sound.fanfare();
+      Reward('🍓', level.pairs >= 8 ? 3 : level.pairs >= 6 ? 2 : 1, window.innerWidth / 2, window.innerHeight / 2);
       const overlay = document.createElement('div');
       overlay.className = 'overlay';
       overlay.innerHTML = `

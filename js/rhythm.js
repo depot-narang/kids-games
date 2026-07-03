@@ -116,6 +116,7 @@ GameShell.registerGame({
 
     function finish(song) {
       Sound.fanfare();
+      Reward('🍓', 2, window.innerWidth / 2, window.innerHeight / 2);
       const overlay = document.createElement('div');
       overlay.className = 'overlay';
       overlay.innerHTML = `

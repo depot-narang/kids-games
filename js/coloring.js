@@ -107,6 +107,7 @@ GameShell.registerGame({
           return;
         }
         Sound.fanfare();
+        Reward('🍓', 2, window.innerWidth / 2, window.innerHeight / 2);
         const creatures = Store.get('creatures', []);
         creatures.push({ template: tplId, colors: { ...colors }, ts: Date.now() });
         while (creatures.length > MAX_CREATURES) creatures.shift();

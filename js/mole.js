@@ -149,6 +149,8 @@ GameShell.registerGame({
     function finish(players, boards, speed) {
       running = false;
       Sound.fanfare();
+      const totalScore = boards.reduce((a, b) => a + b.score, 0);
+      Reward('🍓', Math.max(1, Math.floor(totalScore / 4)), window.innerWidth / 2, window.innerHeight / 2);
       let title, msg;
       if (players === 1) {
         const bestKey = 'mole.best.' + speed.id;
