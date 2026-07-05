@@ -113,8 +113,8 @@ GameShell.registerGame({
       }
     }
 
-    function frame(now) {
-      if (!running) { raf = requestAnimationFrame(frame); return; }
+    function step(now) {
+      if (!running) return;
       const interval = Math.max(300, 640 - level * 34);
       const maxB = 8 + Math.round(level * 1.6);
       if (now - lastSpawn > interval && balloons.length < maxB) { spawn(now); lastSpawn = now; }
@@ -138,8 +138,8 @@ GameShell.registerGame({
         ctx.globalAlpha = Math.min(1, (flash.until - now) / 600);
         ctx.fillText(flash.txt, w / 2, h * 0.3); ctx.globalAlpha = 1;
       }
-      raf = requestAnimationFrame(frame);
     }
+    function frame(now) { try { step(now); } catch (e) {} raf = requestAnimationFrame(frame); }
 
     reset();
     raf = requestAnimationFrame(frame);

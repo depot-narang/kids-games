@@ -98,8 +98,7 @@ GameShell.registerGame({
       else { ctx.moveTo(mx - size * 0.14, my); ctx.quadraticCurveTo(mx, my + size * 0.14, mx + size * 0.16, my); ctx.stroke(); }
     }
 
-    function frame(now) {
-      if (!running) return;
+    function step(now) {
       const grad = ctx.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, '#7ecdf5'); grad.addColorStop(1, '#2a7fc9');
       ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = '#e8cf94'; ctx.beginPath(); ctx.ellipse(w / 2, h + 18, w * 0.75, 55, 0, Math.PI, 0); ctx.fill();
@@ -141,8 +140,8 @@ GameShell.registerGame({
       if (now > kissCd && fish.length >= 2 && Math.random() < 0.02) { const a = randPick(fish), b = randPick(fish); if (a !== b && Math.hypot(a.x - b.x, a.y - b.y) < 55) { emote((a.x + b.x) / 2, (a.y + b.y) / 2 - 14, '💕'); kissCd = now + 2500; } }
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       for (let i = emotes.length - 1; i >= 0; i--) { const m = emotes[i]; m.y += m.vy; m.life -= 0.016; if (m.life <= 0) { emotes.splice(i, 1); continue; } ctx.globalAlpha = Math.min(1, m.life * 1.5); ctx.font = '22px serif'; ctx.fillText(m.ch, m.x, m.y); ctx.globalAlpha = 1; }
-      raf = requestAnimationFrame(frame);
     }
+    function frame(now) { if (!running) return; try { step(now); } catch (e) {} raf = requestAnimationFrame(frame); }
     raf = requestAnimationFrame(frame);
     return { destroy() { running = false; if (raf) cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); save(); } };
   },

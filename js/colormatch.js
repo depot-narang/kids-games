@@ -39,10 +39,12 @@ GameShell.registerGame({
     }
     function tick(now) {
       if (!running) return;
-      const left = 1 - (now - tStart) / tLimit;
-      fill.style.width = Math.max(0, left * 100) + '%';
-      fill.style.background = left > 0.4 ? '#7cc95a' : '#ff6f91';
-      if (left <= 0) { wrong(); return; }
+      try {
+        const left = 1 - (now - tStart) / tLimit;
+        fill.style.width = Math.max(0, left * 100) + '%';
+        fill.style.background = left > 0.4 ? '#7cc95a' : '#ff6f91';
+        if (left <= 0) { wrong(); return; }
+      } catch (e) {}
       raf = requestAnimationFrame(tick);
     }
     function pick(o) {

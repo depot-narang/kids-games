@@ -37,21 +37,23 @@ GameShell.registerGame({
     function spawnNext() {
       if (!running) return;
       const [x, y] = rndPos();
-      nextPad = pad(x, y, true);
+      const el = pad(x, y, true);
+      nextPad = el;
       const hasFly = score >= 5 && Math.random() < 0.25;
-      if (hasFly) { const f = document.createElement('div'); f.textContent = '🪰'; f.style.cssText = 'position:absolute;top:-6px;right:-4px;font-size:22px'; nextPad.appendChild(f); }
+      if (hasFly) { const f = document.createElement('div'); f.textContent = '🪰'; f.style.cssText = 'position:absolute;top:-6px;right:-4px;font-size:22px'; el.appendChild(f); }
       const limit = Math.max(650, 1700 - score * 45);
       timer = later(() => miss(), limit);
-      nextPad.addEventListener('pointerdown', (e) => {
+      el.addEventListener('pointerdown', (e) => {
         e.preventDefault();
-        if (!running) return;
+        if (!running || nextPad !== el) return; // 이미 눌린 연잎/중복 터치 무시
         clearTimeout(timer);
         Sound.blip();
         score += hasFly ? 2 : 1; updateHud();
         frog.style.left = x + '%'; frog.style.top = y + '%';
-        const br = body.getBoundingClientRect(); const r = nextPad.getBoundingClientRect();
+        const br = body.getBoundingClientRect(); const r = el.getBoundingClientRect();
         spawnFx(body, r.left - br.left + r.width / 2, r.top - br.top, hasFly ? '⭐' : '💦');
-        curPad.remove(); curPad = nextPad; nextPad = null;
+        if (curPad) curPad.remove();
+        curPad = el; el.style.filter = ''; nextPad = null;
         later(spawnNext, 120);
       });
     }
