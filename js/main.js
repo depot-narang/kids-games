@@ -41,7 +41,7 @@ const GameShell = (() => {
     home.classList.add('active');
     home.innerHTML = `
       <h1 class="home-title">🎠 우리들의 게임나라</h1>
-      <div class="player-bar">${playerChip()}</div>
+      <div class="player-bar">${playerChip()}<button class="voice-btn" aria-label="목소리">🔊</button></div>
       <div id="section-grid"></div>`;
     const grid = home.querySelector('#section-grid');
     SECTIONS.forEach((s) => {
@@ -57,7 +57,8 @@ const GameShell = (() => {
       });
       grid.appendChild(card);
     });
-    home.querySelector('.player-bar').addEventListener('click', () => { Sound.blip(); showPlayers(); });
+    home.querySelector('.player-chip').addEventListener('click', () => { Sound.blip(); showPlayers(); });
+    home.querySelector('.voice-btn').addEventListener('click', () => { Sound.blip(); showVoiceSettings(); });
   }
 
   function makeScreen(title, color, onBack) {
@@ -138,13 +139,62 @@ function spawnFx(container, x, y, emoji) {
   setTimeout(() => fx.remove(), 1000);
 }
 
+// 음성(목소리) 설정 — 기기에 설치된 한국어 목소리 + 높낮이/빠르기
+const VoicePref = {
+  all() { try { return (speechSynthesis.getVoices() || []).filter((v) => (v.lang || '').toLowerCase().replace('_', '-').startsWith('ko')); } catch (e) { return []; } },
+  chosen() { const n = Store.get('voice.name', null); const list = this.all(); return list.find((v) => v.name === n) || list[0] || null; },
+  pitch() { return Store.get('voice.pitch', 1.25); },
+  rate() { return Store.get('voice.rate', 0.9); },
+};
+
 // 한국어 소리 내어 읽기 (자모/음절/단어)
 function speakKo(text, rate) {
   try {
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ko-KR'; u.rate = rate || 0.9;
+    u.lang = 'ko-KR';
+    const v = VoicePref.chosen(); if (v) u.voice = v;
+    u.rate = rate || VoicePref.rate();
+    u.pitch = VoicePref.pitch();
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   } catch (e) { try { Sound.ding(); } catch (_) {} }
+}
+
+// 목소리 고르기 화면
+function showVoiceSettings() {
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  function build() {
+    const voices = VoicePref.all();
+    const curName = (VoicePref.chosen() || {}).name;
+    const curPitch = VoicePref.pitch();
+    overlay.innerHTML = `<div class="overlay-card"><h3>🔊 목소리 고르기</h3>
+      ${voices.length ? '<p style="font-size:16px;color:#8a7d95">목소리를 눌러 들어보세요</p>' : '<p>이 기기에서 한국어 목소리를 못 찾았어요.<br>태블릿 설정 → 손쉬운 사용/음성에서<br>한국어 음성을 켜주세요.</p>'}
+      <div class="voice-list"></div>
+      <p style="margin-top:8px;font-size:16px;color:#8a7d95">목소리 높낮이</p>
+      <div class="overlay-buttons pitch-row">
+        <button class="btn ${curPitch >= 1.4 ? 'primary' : ''}" data-p="1.5">🐿️ 아주 귀엽게</button>
+        <button class="btn ${curPitch >= 1.1 && curPitch < 1.4 ? 'primary' : ''}" data-p="1.25">🙂 귀엽게</button>
+        <button class="btn ${curPitch < 1.1 ? 'primary' : ''}" data-p="1.0">🧑 보통</button>
+      </div>
+      <div class="overlay-buttons">
+        <button class="btn big test">🎤 들어보기</button>
+        <button class="btn big primary close">다 됐어요</button>
+      </div></div>`;
+    const vl = overlay.querySelector('.voice-list');
+    voices.forEach((v) => {
+      const b = document.createElement('button');
+      b.className = 'btn' + (v.name === curName ? ' primary' : '');
+      b.textContent = v.name.split('(')[0].replace(/Microsoft|Google|Apple/g, '').trim() || v.name;
+      b.addEventListener('click', () => { Store.set('voice.name', v.name); speakKo('안녕! 나는 여우야'); build(); });
+      vl.appendChild(b);
+    });
+    overlay.querySelectorAll('.pitch-row .btn').forEach((b) => b.addEventListener('click', () => { Store.set('voice.pitch', parseFloat(b.dataset.p)); speakKo('가 나 다 라'); build(); }));
+    overlay.querySelector('.test').addEventListener('click', () => speakKo('안녕! 오늘도 재미있게 놀자'));
+    overlay.querySelector('.close').addEventListener('click', () => { Sound.pop(); try { speechSynthesis.onvoiceschanged = null; } catch (e) {} try { speechSynthesis.cancel(); } catch (e) {} overlay.remove(); });
+  }
+  build();
+  document.getElementById('app').appendChild(overlay);
+  try { speechSynthesis.onvoiceschanged = () => build(); } catch (e) {}
 }
 
 function randBetween(a, b) { return a + Math.random() * (b - a); }
