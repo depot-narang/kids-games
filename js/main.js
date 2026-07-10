@@ -138,6 +138,15 @@ function spawnFx(container, x, y, emoji) {
   setTimeout(() => fx.remove(), 1000);
 }
 
+// 한국어 소리 내어 읽기 (자모/음절/단어)
+function speakKo(text, rate) {
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR'; u.rate = rate || 0.9;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch (e) { try { Sound.ding(); } catch (_) {} }
+}
+
 function randBetween(a, b) { return a + Math.random() * (b - a); }
 function randPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 

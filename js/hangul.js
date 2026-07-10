@@ -68,8 +68,32 @@
   }
 
   function run(body, actions, mode) {
-    let raf = null, resizeCleanup = null;
+    let raf = null, resizeCleanup = null, readTimer = null;
     let stream = null;
+
+    // 📣 가나다 따라 읽기 — 한 글자씩 자동으로 넘어가며 소리내어 읽어줘요
+    function showReadAlong() {
+      setHeaderFruits();
+      const SYL = BASIC_SYL;
+      let idx = 0, playing = true;
+      body.innerHTML = `<div class="hangul-center readalong">
+        <div class="read-card"></div>
+        <div class="read-controls"><button class="btn rp">⬅️</button><button class="btn pp">⏸️</button><button class="btn rn">➡️</button></div>
+        <div class="read-progress"></div></div>`;
+      const card = body.querySelector('.read-card'), prog = body.querySelector('.read-progress'), pp = body.querySelector('.pp');
+      function paint(speak) {
+        card.textContent = SYL[idx];
+        card.classList.remove('pulse'); void card.offsetWidth; card.classList.add('pulse');
+        prog.innerHTML = SYL.map((s, i) => `<span class="${i === idx ? 'cur' : ''}">${s}</span>`).join('');
+        if (speak) speakKo(SYL[idx], 0.9);
+      }
+      function schedule() { clearTimeout(readTimer); if (!playing) return; readTimer = setTimeout(() => { idx = (idx + 1) % SYL.length; paint(true); schedule(); }, 1500); }
+      function step(d) { idx = (idx + d + SYL.length) % SYL.length; paint(true); schedule(); }
+      body.querySelector('.rp').addEventListener('click', () => { Sound.blip(); step(-1); });
+      body.querySelector('.rn').addEventListener('click', () => { Sound.blip(); step(1); });
+      pp.addEventListener('click', () => { playing = !playing; pp.textContent = playing ? '⏸️' : '▶️'; if (playing) { paint(true); schedule(); } else clearTimeout(readTimer); });
+      paint(true); schedule();
+    }
 
     function speak(text) {
       try { const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = 0.8; speechSynthesis.cancel(); speechSynthesis.speak(u); }
@@ -341,6 +365,7 @@
       if (mode === 'word') showWordMenu();
       else if (mode === 'sentence') showSentenceMenu();
       else if (mode === 'record') showRecord();
+      else if (mode === 'read') showReadAlong();
       else if (mode === 'basic') startWordSet(BASIC_CAT, Math.min(Player.progress(name).basic || 0, BASIC_SYL.length - 1), () => GameShell.showSection('learn'));
       else if (mode === 'name') startWordSet({ id: 'myname_' + name, name: '내 이름', words: [[name, '😊']] }, 0, () => GameShell.showSection('learn'));
     }
@@ -351,12 +376,14 @@
       destroy() {
         if (raf) cancelAnimationFrame(raf);
         if (resizeCleanup) resizeCleanup();
+        if (readTimer) clearTimeout(readTimer);
         try { speechSynthesis.cancel(); } catch (e) {}
       },
     };
   }
 
   GameShell.registerGame({ id: 'learn-basic', section: 'learn', name: '가나다 쓰기', emoji: '🐣', color: '#fff0b8', desc: '한 글자씩 (처음)', init: (b, a) => run(b, a, 'basic') });
+  GameShell.registerGame({ id: 'learn-read', section: 'learn', name: '가나다 읽기', emoji: '📣', color: '#ffe0c2', desc: '따라 읽어요', init: (b, a) => run(b, a, 'read') });
   GameShell.registerGame({ id: 'learn-word', section: 'learn', name: '단어 쓰기', emoji: '📝', color: '#ffe1a8', desc: '또박또박 단어', init: (b, a) => run(b, a, 'word') });
   GameShell.registerGame({ id: 'learn-sentence', section: 'learn', name: '문장 쓰기', emoji: '📖', color: '#e5d4ff', desc: '문장 따라쓰기', init: (b, a) => run(b, a, 'sentence') });
   GameShell.registerGame({ id: 'learn-name', section: 'learn', name: '내 이름 쓰기', emoji: '🔤', color: '#ffe0c2', desc: '내 이름 연습', init: (b, a) => run(b, a, 'name') });

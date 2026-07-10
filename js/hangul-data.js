@@ -133,5 +133,25 @@ const HangulData = (() => {
     return c >= 0 && c <= 11171;
   }
 
-  return { decompose, getSyllableStrokes, isHangulSyllable, INITIALS, MEDIALS };
+  // 자모 소리 (TTS로 읽어줄 글자: ㄹ→르, ㅏ→아)
+  const CONS_SOUND = { 'ㄱ': '그', 'ㄲ': '끄', 'ㄴ': '느', 'ㄷ': '드', 'ㄸ': '뜨', 'ㄹ': '르', 'ㅁ': '므', 'ㅂ': '브', 'ㅃ': '쁘', 'ㅅ': '스', 'ㅆ': '쓰', 'ㅇ': '으', 'ㅈ': '즈', 'ㅉ': '쯔', 'ㅊ': '츠', 'ㅋ': '크', 'ㅌ': '트', 'ㅍ': '프', 'ㅎ': '흐' };
+  const VOWEL_SOUND = { 'ㅏ': '아', 'ㅑ': '야', 'ㅓ': '어', 'ㅕ': '여', 'ㅗ': '오', 'ㅛ': '요', 'ㅜ': '우', 'ㅠ': '유', 'ㅡ': '으', 'ㅣ': '이', 'ㅐ': '애', 'ㅒ': '얘', 'ㅔ': '에', 'ㅖ': '예', 'ㅘ': '와', 'ㅙ': '왜', 'ㅚ': '외', 'ㅝ': '워', 'ㅞ': '웨', 'ㅟ': '위', 'ㅢ': '의' };
+  function soundOf(j) { return CONS_SOUND[j] || VOWEL_SOUND[j] || j; }
+
+  // 글자를 초성/중성/종성 슬롯으로 (셀 0~100 좌표의 중심 위치 포함)
+  function boxCenter(b) { return [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2]; }
+  function jamoSlots(ch) {
+    const d = decompose(ch); if (!d) return null;
+    const hasF = d.f !== '';
+    const L = layout(d.v, hasF);
+    const slots = [{ role: 'i', jamo: d.i, c: boxCenter(L.I) }];
+    if (V_COMPOUND[d.v]) {
+      const a = boxCenter(L.Vb), b = boxCenter(L.Vr);
+      slots.push({ role: 'v', jamo: d.v, c: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] });
+    } else slots.push({ role: 'v', jamo: d.v, c: boxCenter(L.V) });
+    if (hasF) slots.push({ role: 'f', jamo: d.f, c: boxCenter(L.F) });
+    return slots;
+  }
+
+  return { decompose, getSyllableStrokes, isHangulSyllable, soundOf, jamoSlots, INITIALS, MEDIALS };
 })();

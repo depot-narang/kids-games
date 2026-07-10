@@ -46,8 +46,8 @@ body {
 @media (max-width:720px), (orientation:portrait) {
   #home-grid { grid-template-columns:repeat(2, 1fr); }
 }
-.section-list { display:flex; align-items:flex-start; justify-content:center; padding:16px; min-height:100%; }
-.section-list #home-grid { grid-template-columns:repeat(auto-fit, minmax(150px, 220px)); }
+.section-list { display:flex; padding:16px; min-height:100%; }
+.section-list #home-grid { grid-template-columns:repeat(auto-fit, minmax(150px, 220px)); margin:auto; }
 
 /* 홈 3구역 + 친구 칩 */
 #section-grid {
@@ -473,6 +473,45 @@ canvas.fill { position:absolute; inset:0; width:100%; height:100%; display:block
 .cal-cell.has { background:#ffe3a0; color:#7a5a10; }
 .cal-cell .cal-stamp { font-size:16px; }
 .cal-head { font-size:13px; color:#8a7d95; text-align:center; }
+
+/* ---------- 글자 만들기 ---------- */
+.build-wrap { gap:12px; }
+.build-emoji { font-size:clamp(46px,9vh,80px); line-height:1; }
+.build-word { font-size:clamp(30px,6vh,48px); font-weight:bold; color:#4a3b52; letter-spacing:6px; }
+.build-cells { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+.build-cell { position:relative; width:clamp(110px,26vw,150px); aspect-ratio:1; background:#fff; border-radius:18px; box-shadow:0 3px 10px rgba(0,0,0,.12); }
+.build-cell.done { display:flex; align-items:center; justify-content:center; background:#fff3d6; }
+.build-slot {
+  position:absolute; transform:translate(-50%,-50%);
+  width:clamp(38px,9vw,54px); height:clamp(38px,9vw,54px);
+  border:3px dashed #dcd3e4; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:clamp(24px,5.5vw,38px); color:#e2d9ea; font-family:'Jua',sans-serif;
+}
+.build-slot.filled { border-style:solid; border-color:#7cc95a; background:#eafbe4; color:#3f7a30; }
+.cell-syl { font-size:clamp(58px,15vw,100px); font-weight:bold; color:#ff6f91; font-family:'Jua',sans-serif; }
+.build-pool { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:96vw; padding:8px; }
+.jamo-tile {
+  width:clamp(48px,11vw,66px); height:clamp(48px,11vw,66px);
+  border:none; border-radius:16px; background:#ffe08a; color:#5b4a2a;
+  font-size:clamp(28px,6.5vw,44px); font-family:'Jua',sans-serif; cursor:grab;
+  box-shadow:0 4px 0 rgba(0,0,0,.15); touch-action:none;
+}
+.jamo-tile:active { transform:scale(.95); }
+
+/* ---------- 가나다 읽기 ---------- */
+.readalong { gap:22px; }
+.read-card {
+  width:min(58vw,280px); aspect-ratio:1; background:#fff; border-radius:32px;
+  box-shadow:0 6px 20px rgba(0,0,0,.15); display:flex; align-items:center; justify-content:center;
+  font-size:min(36vw,190px); font-weight:bold; color:#ff6f91; font-family:'Jua',sans-serif;
+}
+.read-card.pulse { animation:readPulse .5s; }
+@keyframes readPulse { 0%{transform:scale(1);} 30%{transform:scale(1.13);} 100%{transform:scale(1);} }
+.read-controls { display:flex; gap:16px; }
+.read-controls .btn { font-size:30px; padding:10px 22px; }
+.read-progress { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; max-width:90vw; font-size:26px; color:#cabcd4; font-weight:bold; }
+.read-progress .cur { color:#ff6f91; transform:scale(1.2); display:inline-block; }
 
 /* ---------- Particles / effects ---------- */
 .fx {
