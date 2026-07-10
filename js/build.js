@@ -11,7 +11,7 @@ GameShell.registerGame({
     const VOW = ['ㅏ', 'ㅑ', 'ㅓ', 'ㅕ', 'ㅗ', 'ㅛ', 'ㅜ', 'ㅠ', 'ㅡ', 'ㅣ', 'ㅐ', 'ㅔ'];
     const name = Player.current();
     let wIdx = Math.min(Player.progress(name).build || 0, WORDS.length - 1);
-    let drag = null, slotEls = [];
+    let drag = null, slotEls = [], introTimer = null;
 
     function setFruits() {
       if (!name) { actions.innerHTML = ''; return; }
@@ -52,7 +52,9 @@ GameShell.registerGame({
       const poolEl = body.querySelector('.build-pool');
       pool.forEach((j) => { const t = document.createElement('button'); t.className = 'jamo-tile'; t.textContent = j; t.dataset.jamo = j; addTile(t, syllables); poolEl.appendChild(t); });
       body.querySelector('.listen').addEventListener('click', () => speakKo(word));
-      speakKo(word);
+      // 그림·글자를 먼저 눈으로 볼 시간을 주고 나서 단어를 읽어줘요
+      clearTimeout(introTimer);
+      introTimer = setTimeout(() => speakKo(word), 1300);
     }
 
     function addTile(tile, syllables) {
@@ -103,6 +105,6 @@ GameShell.registerGame({
     }
 
     render();
-    return { destroy() { try { speechSynthesis.cancel(); } catch (e) {} } };
+    return { destroy() { clearTimeout(introTimer); try { speechSynthesis.cancel(); } catch (e) {} } };
   },
 });
