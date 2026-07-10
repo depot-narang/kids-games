@@ -80,9 +80,11 @@ GameShell.registerGame({
       const syl = syllables[+slot.dataset.ci]; syl.filled++;
       if (syl.filled >= syl.total) {
         syl.cell.classList.add('done'); syl.cell.innerHTML = `<span class="cell-syl">${syl.ch}</span>`;
-        setTimeout(() => speakKo(syl.ch), 350);
+        // 자모 소리(방금)와 겹치지 않게 잠깐 쉬었다가 음절 소리
+        setTimeout(() => speakKo(syl.ch), 750);
         syl.cell.addEventListener('pointerdown', (e) => { e.preventDefault(); speakKo(syl.ch); });
-        if (syllables.every((s) => s.filled >= s.total)) setTimeout(() => wordDone(), 800);
+        // 음절 소리가 끝난 뒤 단어 소리 (충분한 간격)
+        if (syllables.every((s) => s.filled >= s.total)) setTimeout(() => wordDone(), 1800);
       }
     }
 
