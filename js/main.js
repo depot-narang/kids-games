@@ -152,7 +152,9 @@ function speakKo(text, rate) {
   try {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'ko-KR';
-    const v = VoicePref.chosen(); if (v) u.voice = v;
+    // 기본은 브라우저 기본 목소리 그대로 (안정적). 사용자가 직접 고른 경우에만 지정.
+    const stored = Store.get('voice.name', null);
+    if (stored) { const vv = VoicePref.all().find((x) => x.name === stored); if (vv) u.voice = vv; }
     u.rate = rate || VoicePref.rate();
     u.pitch = VoicePref.pitch();
     speechSynthesis.cancel(); speechSynthesis.speak(u);
@@ -165,7 +167,7 @@ function showVoiceSettings() {
   overlay.className = 'overlay';
   function build() {
     const voices = VoicePref.all();
-    const curName = (VoicePref.chosen() || {}).name;
+    const curName = Store.get('voice.name', null);
     const curPitch = VoicePref.pitch();
     overlay.innerHTML = `<div class="overlay-card"><h3>🔊 목소리 고르기</h3>
       ${voices.length ? '<p style="font-size:16px;color:#8a7d95">목소리를 눌러 들어보세요</p>' : '<p>이 기기에서 한국어 목소리를 못 찾았어요.<br>태블릿 설정 → 손쉬운 사용/음성에서<br>한국어 음성을 켜주세요.</p>'}
@@ -181,6 +183,11 @@ function showVoiceSettings() {
         <button class="btn big primary close">다 됐어요</button>
       </div></div>`;
     const vl = overlay.querySelector('.voice-list');
+    const def = document.createElement('button');
+    def.className = 'btn' + (!curName ? ' primary' : '');
+    def.textContent = '🔤 기본';
+    def.addEventListener('click', () => { Store.set('voice.name', null); speakKo('안녕! 나는 여우야'); build(); });
+    vl.appendChild(def);
     voices.forEach((v) => {
       const b = document.createElement('button');
       b.className = 'btn' + (v.name === curName ? ' primary' : '');
