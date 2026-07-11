@@ -150,8 +150,6 @@ const VoicePref = {
     return pool.find((v) => /유나|yuna/i.test(v.name)) || pool[0];
   },
   chosen() { const n = Store.get('voice.name', null); return (n && this.all().find((v) => v.name === n)) || this.best(); },
-  pitch() { return Store.get('voice.pitch', 1.25); },
-  rate() { return Store.get('voice.rate', 0.9); },
 };
 
 // 첫 터치에서 음성엔진 깨우기 (사파리는 사용자 터치 안에서 한 번 speak해야 이후 재생이 풀려요)
@@ -177,13 +175,10 @@ function speakKo(text, rate, on) {
   if (typeof AudioManifest !== 'undefined' && AudioManifest.has(f)) {
     try {
       if (_audioEl) { try { _audioEl.pause(); } catch (e) {} }
-      const folder = Store.get('voice.rec', 'yuna');
+      let folder = Store.get('voice.rec', 'yuna');
+      if (typeof AudioVoices !== 'undefined' && !AudioVoices.includes(folder)) folder = 'yuna'; // 없어진 목소리 방어
       const a = new Audio('sound/' + folder + '/' + f);
       _audioEl = a;
-      // 높낮이 설정을 재생 속도로 살짝 반영 (귀여운 느낌)
-      const p = VoicePref.pitch();
-      a.playbackRate = p >= 1.4 ? 1.12 : p >= 1.1 ? 1.05 : 1;
-      try { a.preservesPitch = false; a.webkitPreservesPitch = false; } catch (e) {}
       if (on && on.start) a.addEventListener('playing', () => on.start(), { once: true });
       a.addEventListener('error', () => speakTts(text, rate, on), { once: true });
       a.play().catch(() => speakTts(text, rate, on));
@@ -207,8 +202,8 @@ function speakTts(text, rate, on) {
       _ttsCurrent = u;
       u.lang = 'ko-KR'; u.volume = 1;
       const v = VoicePref.chosen(); if (v) u.voice = v;
-      u.rate = rate || VoicePref.rate();
-      u.pitch = VoicePref.pitch();
+      u.rate = rate || 0.9;
+      u.pitch = 1;
       let started = false;
       u.onstart = () => { started = true; if (on && on.start) on.start(); };
       u.onend = () => { if (_ttsCurrent === u) _ttsCurrent = null; };
@@ -237,20 +232,12 @@ function showVoiceSettings() {
   function build() {
     const RECS = [
       { id: 'yuna', label: '👧 유나 언니' },
-      { id: 'grandma', label: '👵 할머니' },
-      { id: 'grandpa', label: '👴 할아버지' },
+      { id: 'male', label: '👨 아저씨' },
     ];
     const curRec = Store.get('voice.rec', 'yuna');
-    const curPitch = VoicePref.pitch();
     overlay.innerHTML = `<div class="overlay-card"><h3>🔊 목소리 고르기</h3>
       <p style="font-size:16px;color:#8a7d95">목소리를 눌러 들어보세요</p>
       <div class="voice-list"></div>
-      <p style="margin-top:8px;font-size:16px;color:#8a7d95">목소리 높낮이</p>
-      <div class="overlay-buttons pitch-row">
-        <button class="btn ${curPitch >= 1.4 ? 'primary' : ''}" data-p="1.5">🐿️ 아주 귀엽게</button>
-        <button class="btn ${curPitch >= 1.1 && curPitch < 1.4 ? 'primary' : ''}" data-p="1.25">🙂 귀엽게</button>
-        <button class="btn ${curPitch < 1.1 ? 'primary' : ''}" data-p="1.0">🧑 보통</button>
-      </div>
       <div class="voice-status" style="font-size:15px;color:#8a7d95;min-height:22px"></div>
       <div class="overlay-buttons">
         <button class="btn big test">🎤 들어보기</button>
@@ -259,12 +246,11 @@ function showVoiceSettings() {
     const vl = overlay.querySelector('.voice-list');
     RECS.forEach((r) => {
       const b = document.createElement('button');
-      b.className = 'btn' + (r.id === curRec ? ' primary' : '');
+      b.className = 'btn big' + (r.id === curRec ? ' primary' : '');
       b.textContent = r.label;
       b.addEventListener('click', () => { Store.set('voice.rec', r.id); build(); say('안녕! 나는 여우야'); });
       vl.appendChild(b);
     });
-    overlay.querySelectorAll('.pitch-row .btn').forEach((b) => b.addEventListener('click', () => { Store.set('voice.pitch', parseFloat(b.dataset.p)); build(); say('가 나 다 라'); }));
     overlay.querySelector('.test').addEventListener('click', () => say('안녕! 오늘도 재미있게 놀자'));
     overlay.querySelector('.close').addEventListener('click', () => { Sound.pop(); try { speechSynthesis.cancel(); } catch (e) {} overlay.remove(); });
   }
