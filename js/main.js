@@ -154,29 +154,84 @@ const VoicePref = {
   rate() { return Store.get('voice.rate', 0.9); },
 };
 
-// 첫 터치에서 음성엔진 깨우기 (브라우저 정책 + 크롬 멈춤 버그 대비)
-document.addEventListener('pointerdown', () => { try { speechSynthesis.getVoices(); speechSynthesis.resume(); } catch (e) {} }, { capture: true });
-
-// 한국어 소리 내어 읽기 (자모/음절/단어)
-function speakKo(text, rate) {
+// 첫 터치에서 음성엔진 깨우기 (사파리는 사용자 터치 안에서 한 번 speak해야 이후 재생이 풀려요)
+let _ttsUnlocked = false;
+document.addEventListener('pointerdown', () => {
   try {
-    const synth = window.speechSynthesis; if (!synth) return;
-    synth.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ko-KR';
-    const v = VoicePref.chosen(); // 사용자가 고른 것 또는 자동 최선
-    if (v) u.voice = v;
-    u.rate = rate || VoicePref.rate();
-    u.pitch = VoicePref.pitch();
-    synth.speak(u);
-    setTimeout(() => { try { synth.resume(); } catch (e) {} }, 60);
-  } catch (e) { try { Sound.ding(); } catch (_) {} }
+    speechSynthesis.getVoices(); speechSynthesis.resume();
+    if (!_ttsUnlocked) {
+      _ttsUnlocked = true;
+      const u = new SpeechSynthesisUtterance('.');
+      u.volume = 0; u.rate = 5;
+      speechSynthesis.speak(u);
+    }
+  } catch (e) {}
+}, { capture: true });
+
+// 한국어 소리 내어 읽기 — 미리 녹음된 파일(유나 목소리)을 먼저 쓰고, 없으면 브라우저 TTS로 폴백
+// on: { start(), fail(reason) } — 재생 성공/실패를 알고 싶을 때 사용
+function audioFileOf(text) { return [...text].map((c) => c.codePointAt(0).toString(16)).join('-') + '.m4a'; }
+let _audioEl = null;
+function speakKo(text, rate, on) {
+  const f = audioFileOf(text);
+  if (typeof AudioManifest !== 'undefined' && AudioManifest.has(f)) {
+    try {
+      if (_audioEl) { try { _audioEl.pause(); } catch (e) {} }
+      const a = new Audio('sound/' + f);
+      _audioEl = a;
+      // 높낮이 설정을 재생 속도로 살짝 반영 (귀여운 느낌)
+      const p = VoicePref.pitch();
+      a.playbackRate = p >= 1.4 ? 1.12 : p >= 1.1 ? 1.05 : 1;
+      try { a.preservesPitch = false; a.webkitPreservesPitch = false; } catch (e) {}
+      if (on && on.start) a.addEventListener('playing', () => on.start(), { once: true });
+      a.addEventListener('error', () => speakTts(text, rate, on), { once: true });
+      a.play().catch(() => speakTts(text, rate, on));
+      return;
+    } catch (e) {}
+  }
+  speakTts(text, rate, on);
+}
+
+let _ttsCurrent = null; // 재생 중 GC로 끊기는 크롬 버그 방지용 참조
+let _ttsTimer = null;
+function speakTts(text, rate, on) {
+  try {
+    const synth = window.speechSynthesis;
+    if (!synth) { if (on && on.fail) on.fail('api-none'); return; }
+    clearTimeout(_ttsTimer);
+    if (synth.speaking || synth.pending) synth.cancel();
+    // 크롬 버그 회피: cancel 직후 바로 speak하면 무음으로 굳음 → 다음 틱에 실행
+    _ttsTimer = setTimeout(() => {
+      const u = new SpeechSynthesisUtterance(text);
+      _ttsCurrent = u;
+      u.lang = 'ko-KR'; u.volume = 1;
+      const v = VoicePref.chosen(); if (v) u.voice = v;
+      u.rate = rate || VoicePref.rate();
+      u.pitch = VoicePref.pitch();
+      let started = false;
+      u.onstart = () => { started = true; if (on && on.start) on.start(); };
+      u.onend = () => { if (_ttsCurrent === u) _ttsCurrent = null; };
+      u.onerror = (e) => { if (_ttsCurrent === u) _ttsCurrent = null; if (on && on.fail) on.fail(e.error || 'error'); };
+      synth.speak(u);
+      setTimeout(() => { try { synth.resume(); } catch (e) {} }, 60);
+      if (on && on.fail) setTimeout(() => { if (!started) on.fail('timeout'); }, 2000);
+    }, 90);
+  } catch (e) { if (on && on.fail) on.fail(e.message); }
 }
 
 // 목소리 고르기 화면
 function showVoiceSettings() {
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
+  // 재생 상태를 눈에 보이게 (성공/실패 진단용)
+  function say(text) {
+    const st = () => overlay.querySelector('.voice-status');
+    if (st()) st().textContent = '🔈 재생 준비 중...';
+    speakKo(text, null, {
+      start() { if (st()) st().textContent = '🔊 말하는 중!'; },
+      fail(r) { if (st()) st().textContent = `⚠️ 소리가 안 났어요 (${r}) — 기기 음량과 무음 모드를 확인해 주세요`; },
+    });
+  }
   function build() {
     const voices = VoicePref.all();
     const curName = Store.get('voice.name', null);
@@ -190,6 +245,7 @@ function showVoiceSettings() {
         <button class="btn ${curPitch >= 1.1 && curPitch < 1.4 ? 'primary' : ''}" data-p="1.25">🙂 귀엽게</button>
         <button class="btn ${curPitch < 1.1 ? 'primary' : ''}" data-p="1.0">🧑 보통</button>
       </div>
+      <div class="voice-status" style="font-size:15px;color:#8a7d95;min-height:22px"></div>
       <div class="overlay-buttons">
         <button class="btn big test">🎤 들어보기</button>
         <button class="btn big primary close">다 됐어요</button>
@@ -198,17 +254,17 @@ function showVoiceSettings() {
     const def = document.createElement('button');
     def.className = 'btn' + (!curName ? ' primary' : '');
     def.textContent = '🔤 기본';
-    def.addEventListener('click', () => { Store.set('voice.name', null); speakKo('안녕! 나는 여우야'); build(); });
+    def.addEventListener('click', () => { Store.set('voice.name', null); build(); say('안녕! 나는 여우야'); });
     vl.appendChild(def);
     voices.forEach((v) => {
       const b = document.createElement('button');
       b.className = 'btn' + (v.name === curName ? ' primary' : '');
       b.textContent = v.name.split('(')[0].replace(/Microsoft|Google|Apple/g, '').trim() || v.name;
-      b.addEventListener('click', () => { Store.set('voice.name', v.name); speakKo('안녕! 나는 여우야'); build(); });
+      b.addEventListener('click', () => { Store.set('voice.name', v.name); build(); say('안녕! 나는 여우야'); });
       vl.appendChild(b);
     });
-    overlay.querySelectorAll('.pitch-row .btn').forEach((b) => b.addEventListener('click', () => { Store.set('voice.pitch', parseFloat(b.dataset.p)); speakKo('가 나 다 라'); build(); }));
-    overlay.querySelector('.test').addEventListener('click', () => speakKo('안녕! 오늘도 재미있게 놀자'));
+    overlay.querySelectorAll('.pitch-row .btn').forEach((b) => b.addEventListener('click', () => { Store.set('voice.pitch', parseFloat(b.dataset.p)); build(); say('가 나 다 라'); }));
+    overlay.querySelector('.test').addEventListener('click', () => say('안녕! 오늘도 재미있게 놀자'));
     overlay.querySelector('.close').addEventListener('click', () => { Sound.pop(); try { speechSynthesis.onvoiceschanged = null; } catch (e) {} try { speechSynthesis.cancel(); } catch (e) {} overlay.remove(); });
   }
   build();

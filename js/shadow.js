@@ -3,6 +3,8 @@ GameShell.registerGame({
   id: 'shadow', name: '그림자 맞추기', emoji: '🕵️', desc: '그림자 보고 찾기', color: '#e5d4ff', section: 'game',
   init(body) {
     const ANIMALS = ['bunny', 'cat', 'dog', 'bird', 'duck', 'turtle', 'fish', 'bee', 'butterfly'];
+    const KO_NAME = { bunny: '토끼', cat: '고양이', dog: '강아지', bird: '새', duck: '오리', turtle: '거북이', fish: '물고기', bee: '벌', butterfly: '나비' };
+    let locked = false;
     body.innerHTML = `
       <div class="hud"><div class="pill s">⭐ 0</div><div class="pill l">❤️❤️❤️</div></div>
       <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:16px">
@@ -18,6 +20,7 @@ GameShell.registerGame({
 
     function round() {
       if (!running) return;
+      locked = false;
       const pool = [...ANIMALS].sort(() => Math.random() - 0.5);
       const nOpt = score >= 6 ? 4 : 3;
       const choices = pool.slice(0, nOpt);
@@ -33,8 +36,20 @@ GameShell.registerGame({
       });
     }
     function pick(a, answer) {
-      if (!running) return;
-      if (a === answer) { score++; updateHud(); Sound.ding(); const r = box.getBoundingClientRect(); const br = body.getBoundingClientRect(); spawnFx(body, r.left - br.left + r.width / 2, r.top - br.top + r.height / 2, '⭐'); round(); }
+      if (!running || locked) return;
+      if (a === answer) {
+        locked = true; // 공개되는 동안 중복 터치 방지
+        score++; updateHud(); Sound.ding();
+        // 그림자가 진짜 모습으로 짠! 하고 공개
+        const inner = box.querySelector('div');
+        if (inner) { inner.style.transition = 'filter .35s'; inner.style.filter = 'none'; }
+        box.classList.add('reveal');
+        speakKo(KO_NAME[answer] || '');
+        const r = box.getBoundingClientRect(); const br = body.getBoundingClientRect();
+        spawnFx(body, r.left - br.left + r.width / 2, r.top - br.top + r.height / 2, '⭐');
+        const t = setTimeout(() => { box.classList.remove('reveal'); round(); }, 1400);
+        timers.push(t);
+      }
       else { lives--; updateHud(); Sound.buzz(); body.classList.add('shake'); const t = setTimeout(() => body.classList.remove('shake'), 300); timers.push(t); if (lives <= 0) gameOver(); }
     }
     function gameOver() {

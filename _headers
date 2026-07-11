@@ -9,3 +9,6 @@
 
 /style.css
   Cache-Control: public, max-age=31536000, immutable
+
+/sound/*
+  Cache-Control: public, max-age=604800
