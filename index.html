@@ -6,8 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>우리들의 게임나라</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 <div id="app">
@@ -16,17 +17,30 @@
     <div id="home-grid"></div>
   </section>
 </div>
-<script>
-  // 파일 변경이 항상 반영되도록 버전 쿼리를 붙여 순서대로 로드
-  var V = 'v=14';
-  var FILES = ['audio','main','player','score','cartoon','templates','balloon','memory','paint','mole','rhythm','aquarium','coloring','habitat','frog','colormatch','counting','shadow','simon','hangul-data','build','hangul','garden'];
-  (function load(i){
-    if (i >= FILES.length) { GameShell.boot(); return; }
-    var s = document.createElement('script');
-    s.src = 'js/' + FILES[i] + '.js?' + V;
-    s.onload = function(){ load(i + 1); };
-    document.body.appendChild(s);
-  })(0);
-</script>
+<!-- defer: 모든 파일을 동시에 내려받고, 실행 순서는 그대로 유지 -->
+<script defer src="js/audio.js?v=15"></script>
+<script defer src="js/main.js?v=15"></script>
+<script defer src="js/player.js?v=15"></script>
+<script defer src="js/score.js?v=15"></script>
+<script defer src="js/cartoon.js?v=15"></script>
+<script defer src="js/templates.js?v=15"></script>
+<script defer src="js/balloon.js?v=15"></script>
+<script defer src="js/memory.js?v=15"></script>
+<script defer src="js/paint.js?v=15"></script>
+<script defer src="js/mole.js?v=15"></script>
+<script defer src="js/rhythm.js?v=15"></script>
+<script defer src="js/aquarium.js?v=15"></script>
+<script defer src="js/coloring.js?v=15"></script>
+<script defer src="js/habitat.js?v=15"></script>
+<script defer src="js/frog.js?v=15"></script>
+<script defer src="js/colormatch.js?v=15"></script>
+<script defer src="js/counting.js?v=15"></script>
+<script defer src="js/shadow.js?v=15"></script>
+<script defer src="js/simon.js?v=15"></script>
+<script defer src="js/hangul-data.js?v=15"></script>
+<script defer src="js/build.js?v=15"></script>
+<script defer src="js/hangul.js?v=15"></script>
+<script defer src="js/garden.js?v=15"></script>
+<script>window.addEventListener('DOMContentLoaded', function () { GameShell.boot(); });</script>
 </body>
 </html>

@@ -17,7 +17,16 @@ TOKEN=$(cat "$TOKEN_FILE" | tr -d '[:space:]')
 echo "📦 압축 중..."
 ZIP=".deploy.zip"
 rm -f "$ZIP"
-zip -qr "$ZIP" . -x ".git/*" -x "$ZIP" -x "$TOKEN_FILE" -x "deploy.sh" -x ".gitignore"
+
+# 배포할 때마다 캐시 버전을 자동으로 새로 찍음 (오래 캐시해도 새 코드가 항상 반영되도록)
+STAMP=$(date +%s)
+cp index.html .index.bak
+sed -i '' -E "s/\?v=[0-9]+/?v=$STAMP/g" index.html
+
+zip -qr "$ZIP" . -x ".git/*" -x "$ZIP" -x "$TOKEN_FILE" -x "deploy.sh" -x ".gitignore" -x ".index.bak"
+
+# 원본 index.html 복원 (로컬은 고정 버전 유지)
+mv .index.bak index.html
 
 echo "🔎 사이트 찾는 중..."
 SITE_ID=$(curl -sf -H "Authorization: Bearer $TOKEN" \
