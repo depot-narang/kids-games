@@ -177,7 +177,8 @@ function speakKo(text, rate, on) {
   if (typeof AudioManifest !== 'undefined' && AudioManifest.has(f)) {
     try {
       if (_audioEl) { try { _audioEl.pause(); } catch (e) {} }
-      const a = new Audio('sound/' + f);
+      const folder = Store.get('voice.rec', 'yuna');
+      const a = new Audio('sound/' + folder + '/' + f);
       _audioEl = a;
       // 높낮이 설정을 재생 속도로 살짝 반영 (귀여운 느낌)
       const p = VoicePref.pitch();
@@ -221,8 +222,9 @@ function speakTts(text, rate, on) {
 
 // 목소리 고르기 화면
 function showVoiceSettings() {
+  document.querySelectorAll('.overlay.voice-overlay').forEach((o) => o.remove()); // 중복 방지
   const overlay = document.createElement('div');
-  overlay.className = 'overlay';
+  overlay.className = 'overlay voice-overlay';
   // 재생 상태를 눈에 보이게 (성공/실패 진단용)
   function say(text) {
     const st = () => overlay.querySelector('.voice-status');
@@ -233,11 +235,15 @@ function showVoiceSettings() {
     });
   }
   function build() {
-    const voices = VoicePref.all();
-    const curName = Store.get('voice.name', null);
+    const RECS = [
+      { id: 'yuna', label: '👧 유나 언니' },
+      { id: 'grandma', label: '👵 할머니' },
+      { id: 'grandpa', label: '👴 할아버지' },
+    ];
+    const curRec = Store.get('voice.rec', 'yuna');
     const curPitch = VoicePref.pitch();
     overlay.innerHTML = `<div class="overlay-card"><h3>🔊 목소리 고르기</h3>
-      ${voices.length ? '<p style="font-size:16px;color:#8a7d95">목소리를 눌러 들어보세요</p>' : '<p>이 기기에서 한국어 목소리를 못 찾았어요.<br>태블릿 설정 → 손쉬운 사용/음성에서<br>한국어 음성을 켜주세요.</p>'}
+      <p style="font-size:16px;color:#8a7d95">목소리를 눌러 들어보세요</p>
       <div class="voice-list"></div>
       <p style="margin-top:8px;font-size:16px;color:#8a7d95">목소리 높낮이</p>
       <div class="overlay-buttons pitch-row">
@@ -251,25 +257,19 @@ function showVoiceSettings() {
         <button class="btn big primary close">다 됐어요</button>
       </div></div>`;
     const vl = overlay.querySelector('.voice-list');
-    const def = document.createElement('button');
-    def.className = 'btn' + (!curName ? ' primary' : '');
-    def.textContent = '🔤 기본';
-    def.addEventListener('click', () => { Store.set('voice.name', null); build(); say('안녕! 나는 여우야'); });
-    vl.appendChild(def);
-    voices.forEach((v) => {
+    RECS.forEach((r) => {
       const b = document.createElement('button');
-      b.className = 'btn' + (v.name === curName ? ' primary' : '');
-      b.textContent = v.name.split('(')[0].replace(/Microsoft|Google|Apple/g, '').trim() || v.name;
-      b.addEventListener('click', () => { Store.set('voice.name', v.name); build(); say('안녕! 나는 여우야'); });
+      b.className = 'btn' + (r.id === curRec ? ' primary' : '');
+      b.textContent = r.label;
+      b.addEventListener('click', () => { Store.set('voice.rec', r.id); build(); say('안녕! 나는 여우야'); });
       vl.appendChild(b);
     });
     overlay.querySelectorAll('.pitch-row .btn').forEach((b) => b.addEventListener('click', () => { Store.set('voice.pitch', parseFloat(b.dataset.p)); build(); say('가 나 다 라'); }));
     overlay.querySelector('.test').addEventListener('click', () => say('안녕! 오늘도 재미있게 놀자'));
-    overlay.querySelector('.close').addEventListener('click', () => { Sound.pop(); try { speechSynthesis.onvoiceschanged = null; } catch (e) {} try { speechSynthesis.cancel(); } catch (e) {} overlay.remove(); });
+    overlay.querySelector('.close').addEventListener('click', () => { Sound.pop(); try { speechSynthesis.cancel(); } catch (e) {} overlay.remove(); });
   }
   build();
   document.getElementById('app').appendChild(overlay);
-  try { speechSynthesis.onvoiceschanged = () => build(); } catch (e) {}
 }
 
 function randBetween(a, b) { return a + Math.random() * (b - a); }
