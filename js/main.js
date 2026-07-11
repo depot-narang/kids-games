@@ -142,22 +142,34 @@ function spawnFx(container, x, y, emoji) {
 // 음성(목소리) 설정 — 기기에 설치된 한국어 목소리 + 높낮이/빠르기
 const VoicePref = {
   all() { try { return (speechSynthesis.getVoices() || []).filter((v) => (v.lang || '').toLowerCase().replace('_', '-').startsWith('ko')); } catch (e) { return []; } },
-  chosen() { const n = Store.get('voice.name', null); const list = this.all(); return list.find((v) => v.name === n) || list[0] || null; },
+  // 재생 잘 되는 한국어 목소리 자동 선택 (오프라인 음성 우선, 유나 우선)
+  best() {
+    const list = this.all(); if (!list.length) return null;
+    const local = list.filter((v) => v.localService);
+    const pool = local.length ? local : list;
+    return pool.find((v) => /유나|yuna/i.test(v.name)) || pool[0];
+  },
+  chosen() { const n = Store.get('voice.name', null); return (n && this.all().find((v) => v.name === n)) || this.best(); },
   pitch() { return Store.get('voice.pitch', 1.25); },
   rate() { return Store.get('voice.rate', 0.9); },
 };
 
+// 첫 터치에서 음성엔진 깨우기 (브라우저 정책 + 크롬 멈춤 버그 대비)
+document.addEventListener('pointerdown', () => { try { speechSynthesis.getVoices(); speechSynthesis.resume(); } catch (e) {} }, { capture: true });
+
 // 한국어 소리 내어 읽기 (자모/음절/단어)
 function speakKo(text, rate) {
   try {
+    const synth = window.speechSynthesis; if (!synth) return;
+    synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'ko-KR';
-    // 기본은 브라우저 기본 목소리 그대로 (안정적). 사용자가 직접 고른 경우에만 지정.
-    const stored = Store.get('voice.name', null);
-    if (stored) { const vv = VoicePref.all().find((x) => x.name === stored); if (vv) u.voice = vv; }
+    const v = VoicePref.chosen(); // 사용자가 고른 것 또는 자동 최선
+    if (v) u.voice = v;
     u.rate = rate || VoicePref.rate();
     u.pitch = VoicePref.pitch();
-    speechSynthesis.cancel(); speechSynthesis.speak(u);
+    synth.speak(u);
+    setTimeout(() => { try { synth.resume(); } catch (e) {} }, 60);
   } catch (e) { try { Sound.ding(); } catch (_) {} }
 }
 
