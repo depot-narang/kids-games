@@ -41,7 +41,7 @@ const GameShell = (() => {
     home.classList.add('active');
     home.innerHTML = `
       <h1 class="home-title">🎠 우리들의 게임나라</h1>
-      <div class="player-bar">${playerChip()}<button class="voice-btn" aria-label="목소리">🔊</button></div>
+      <div class="player-bar">${playerChip()}</div>
       <div id="section-grid"></div>`;
     const grid = home.querySelector('#section-grid');
     SECTIONS.forEach((s) => {
@@ -58,7 +58,6 @@ const GameShell = (() => {
       grid.appendChild(card);
     });
     home.querySelector('.player-chip').addEventListener('click', () => { Sound.blip(); showPlayers(); });
-    home.querySelector('.voice-btn').addEventListener('click', () => { Sound.blip(); showVoiceSettings(); });
   }
 
   function makeScreen(title, color, onBack) {
@@ -175,9 +174,7 @@ function speakKo(text, rate, on) {
   if (typeof AudioManifest !== 'undefined' && AudioManifest.has(f)) {
     try {
       if (_audioEl) { try { _audioEl.pause(); } catch (e) {} }
-      let folder = Store.get('voice.rec', 'yuna');
-      if (typeof AudioVoices !== 'undefined' && !AudioVoices.includes(folder)) folder = 'yuna'; // 없어진 목소리 방어
-      const a = new Audio('sound/' + folder + '/' + f);
+      const a = new Audio('sound/yuna/' + f);
       _audioEl = a;
       if (on && on.start) a.addEventListener('playing', () => on.start(), { once: true });
       a.addEventListener('error', () => speakTts(text, rate, on), { once: true });
@@ -213,49 +210,6 @@ function speakTts(text, rate, on) {
       if (on && on.fail) setTimeout(() => { if (!started) on.fail('timeout'); }, 2000);
     }, 90);
   } catch (e) { if (on && on.fail) on.fail(e.message); }
-}
-
-// 목소리 고르기 화면
-function showVoiceSettings() {
-  document.querySelectorAll('.overlay.voice-overlay').forEach((o) => o.remove()); // 중복 방지
-  const overlay = document.createElement('div');
-  overlay.className = 'overlay voice-overlay';
-  // 재생 상태를 눈에 보이게 (성공/실패 진단용)
-  function say(text) {
-    const st = () => overlay.querySelector('.voice-status');
-    if (st()) st().textContent = '🔈 재생 준비 중...';
-    speakKo(text, null, {
-      start() { if (st()) st().textContent = '🔊 말하는 중!'; },
-      fail(r) { if (st()) st().textContent = `⚠️ 소리가 안 났어요 (${r}) — 기기 음량과 무음 모드를 확인해 주세요`; },
-    });
-  }
-  function build() {
-    const RECS = [
-      { id: 'yuna', label: '👧 유나 언니' },
-      { id: 'male', label: '👨 아저씨' },
-    ];
-    const curRec = Store.get('voice.rec', 'yuna');
-    overlay.innerHTML = `<div class="overlay-card"><h3>🔊 목소리 고르기</h3>
-      <p style="font-size:16px;color:#8a7d95">목소리를 눌러 들어보세요</p>
-      <div class="voice-list"></div>
-      <div class="voice-status" style="font-size:15px;color:#8a7d95;min-height:22px"></div>
-      <div class="overlay-buttons">
-        <button class="btn big test">🎤 들어보기</button>
-        <button class="btn big primary close">다 됐어요</button>
-      </div></div>`;
-    const vl = overlay.querySelector('.voice-list');
-    RECS.forEach((r) => {
-      const b = document.createElement('button');
-      b.className = 'btn big' + (r.id === curRec ? ' primary' : '');
-      b.textContent = r.label;
-      b.addEventListener('click', () => { Store.set('voice.rec', r.id); build(); say('안녕! 나는 여우야'); });
-      vl.appendChild(b);
-    });
-    overlay.querySelector('.test').addEventListener('click', () => say('안녕! 오늘도 재미있게 놀자'));
-    overlay.querySelector('.close').addEventListener('click', () => { Sound.pop(); try { speechSynthesis.cancel(); } catch (e) {} overlay.remove(); });
-  }
-  build();
-  document.getElementById('app').appendChild(overlay);
 }
 
 function randBetween(a, b) { return a + Math.random() * (b - a); }

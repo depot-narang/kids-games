@@ -76,7 +76,6 @@ def fname(t):
 # 목소리 세트: 폴더이름 → say 목소리 지정자
 VOICES = {
     'yuna': 'Yuna',
-    'male': 'Reed (한국어(한국))',
 }
 
 manifest = []

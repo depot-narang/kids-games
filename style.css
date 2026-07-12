@@ -57,13 +57,6 @@ body {
 .section-card { padding:26px 14px 20px; }
 .section-card .card-emoji { font-size:clamp(46px, 8vw, 72px); }
 .player-bar { display:flex; justify-content:center; align-items:center; gap:10px; }
-.voice-btn {
-  border:none; border-radius:50%; background:#fff; cursor:pointer;
-  width:52px; height:52px; font-size:26px;
-  box-shadow:0 4px 0 rgba(0,0,0,.12);
-}
-.voice-btn:active { transform:scale(.94); }
-.voice-list { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; max-width:100%; }
 .player-chip {
   display:flex; align-items:center; gap:10px;
   border:none; border-radius:999px; background:#fff; cursor:pointer;
